@@ -1,7 +1,7 @@
 # Mathematische Notation — Sprachreferenz
 
-> **Ziel:** Jede Formel flüssig verbalisieren, ohne nachschlagen zu müssen.  
-> **Struktur:** Symbol | LaTeX | Deutscher Name | Englischer Name | Ausgesprochen (DE)  
+> **Ziel:** Jede Formel flüssig verbalisieren, ohne nachschlagen zu müssen.
+> **Struktur:** Symbol | LaTeX | Deutscher Name | Englischer Name | Ausgesprochen (DE)
 > **Legende:** „Ausgesprochen" = wie man es in einem Vortrag oder Gespräch sagt.
 
 ---
@@ -148,7 +148,7 @@
 
 ### Beispiele (Ausgesprochen)
 
-- $\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$  
+- $\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$
   → „Für alle Epsilon größer null existiert ein Delta größer null, sodass gilt: wenn der Betrag von $x$ minus $a$ kleiner als Delta ist, dann ist der Betrag von $f(x)$ minus $f(a)$ kleiner als Epsilon"
 
 - $P \Leftrightarrow Q$ → „$P$ gilt genau dann wenn $Q$ gilt"
@@ -215,16 +215,16 @@
 
 ### Beispiele (Ausgesprochen)
 
-- $\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}$  
+- $\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}$
   → „Das Integral von null bis Unendlich von $e$ hoch minus $x$ quadrat nach $x$ ist gleich Wurzel aus Pi geteilt durch zwei"
 
-- $\frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u$  
+- $\frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u$
   → „Die zweite partielle Ableitung von $u$ nach $t$ ist gleich $c$ quadrat mal Nabla-Quadrat von $u$"
 
-- $\sum_{n=0}^{\infty} \frac{x^n}{n!} = e^x$  
+- $\sum_{n=0}^{\infty} \frac{x^n}{n!} = e^x$
   → „Die Summe von $n$ gleich null bis Unendlich von $x$ hoch $n$ durch $n$-Fakultät ist gleich $e$ hoch $x$"
 
-- $\oint_C \mathbf{F} \cdot d\mathbf{r}$  
+- $\oint_C \mathbf{F} \cdot d\mathbf{r}$
   → „Das Kurvenintegral über $C$ von $F$ Skalar $d r$"
 
 ---
@@ -618,5 +618,5 @@
 
 ---
 
-*Erstellt als persönliche Sprachreferenz für mathematische Notation.*  
+*Erstellt als persönliche Sprachreferenz für mathematische Notation.*
 *Basiert auf ISO 80000-2, gängiger Lehrbuchtradition (DE/EN) und Vortragskonventionen.*
