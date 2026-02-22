@@ -1,8 +1,8 @@
 # Mathematische Notation — Sprachreferenz
 
-> **Ziel:** Jede Formel flüssig verbalisieren, ohne nachschlagen zu müssen.
-> **Struktur:** Symbol | LaTeX | Deutscher Name | Englischer Name | Ausgesprochen (DE)
-> **Legende:** „Ausgesprochen" = wie man es in einem Vortrag oder Gespräch sagt.
+> **Ziel:** Jede Formel flüssig verbalisieren, ohne nachschlagen zu müssen.  
+> **Struktur:** Symbol | LaTeX | Deutscher Name | Englischer Name | Ausgesprochen (DE)  
+> **Legende:** „Ausgesprochen / Spoken" = wie man es auf Deutsch **und** Englisch in einem Vortrag oder Gespräch sagt.
 
 ---
 
@@ -62,12 +62,14 @@
 | $\%$ | `\%` | Prozent | Percent | „Prozent" |
 | $f \circ g$ | `f \circ g` | Komposition / Verknüpfung | Composition | „$f$ nach $g$" / „$f$ verknüpft mit $g$" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $\frac{a+b}{c-d}$ → „$a$ plus $b$, geteilt durch $c$ minus $d$"
-- $\sqrt[3]{x^2 + 1}$ → „dritte Wurzel aus $x$ quadrat plus eins"
-- $\binom{n}{2} = \frac{n(n-1)}{2}$ → „$n$ über $2$ gleich $n$ mal $n$ minus $1$, geteilt durch $2$"
-- $|x - a| < \varepsilon$ → „der Betrag von $x$ minus $a$ ist kleiner als Epsilon"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $\frac{a+b}{c-d}$ | „$a$ plus $b$, geteilt durch $c$ minus $d$" | "$a$ plus $b$, over $c$ minus $d$" |
+| $\sqrt[3]{x^2 + 1}$ | „dritte Wurzel aus $x$ quadrat plus eins" | "the cube root of $x$ squared plus one" |
+| $\binom{n}{2} = \frac{n(n-1)}{2}$ | „$n$ über $2$ gleich $n$ mal $n$ minus $1$, geteilt durch $2$" | "$n$ choose $2$ equals $n$ times $n$ minus $1$, over $2$" |
+| $\|x - a\| < \varepsilon$ | „der Betrag von $x$ minus $a$ ist kleiner als Epsilon" | "the absolute value of $x$ minus $a$ is less than epsilon" |
 
 ---
 
@@ -109,11 +111,13 @@
 | $\bigsqcup$ | `\bigsqcup` | Disjunkte Vereinigung | Disjoint union | „disjunkte Vereinigung" |
 | $\triangle$ | `\triangle` | Symmetrische Differenz | Symmetric difference | „symmetrische Differenz" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $A \setminus B = \{x \in A \mid x \notin B\}$ → „$A$ ohne $B$ ist die Menge aller $x$ Element von $A$, für die gilt: $x$ ist kein Element von $B$"
-- $\mathcal{P}(\{1,2\}) = \{\emptyset, \{1\}, \{2\}, \{1,2\}\}$ → „Die Potenzmenge der Menge eins, zwei ist..."
-- $A \subseteq B \Leftrightarrow \forall x \in A: x \in B$ → „$A$ ist Teilmenge von $B$ genau dann wenn für alle $x$ in $A$ gilt: $x$ ist Element von $B$"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $A \setminus B = \{x \in A \mid x \notin B\}$ | „$A$ ohne $B$ ist die Menge aller $x$ in $A$, für die gilt: $x$ ist kein Element von $B$" | "$A$ minus $B$ is the set of all $x$ in $A$ such that $x$ is not in $B$" |
+| $\mathcal{P}(\{1,2\})$ | „Potenzmenge der Menge eins, zwei" | "the power set of the set one, two" |
+| $A \subseteq B \Leftrightarrow \forall x \in A: x \in B$ | „$A$ ist Teilmenge von $B$ genau dann wenn für alle $x$ in $A$ gilt: $x$ ist Element von $B$" | "$A$ is a subset of $B$ if and only if for all $x$ in $A$, $x$ is in $B$" |
 
 ---
 
@@ -146,14 +150,13 @@
 | $\neg$ | `\neg` | Negation | Negation | „nicht" |
 | $\iff$ | `\iff` | Genau dann wenn | If and only if | „genau dann wenn" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$
-  → „Für alle Epsilon größer null existiert ein Delta größer null, sodass gilt: wenn der Betrag von $x$ minus $a$ kleiner als Delta ist, dann ist der Betrag von $f(x)$ minus $f(a)$ kleiner als Epsilon"
-
-- $P \Leftrightarrow Q$ → „$P$ gilt genau dann wenn $Q$ gilt"
-
-- $\exists! x \in \mathbb{R}: x^2 = 0$ → „Es gibt genau ein $x$ in den reellen Zahlen, sodass $x$ quadrat gleich null"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$ | „Für alle Epsilon größer null existiert ein Delta größer null, sodass: wenn der Betrag von $x$ minus $a$ kleiner als Delta, dann der Betrag von $f(x)$ minus $f(a)$ kleiner als Epsilon" | "For all epsilon greater than zero there exists delta greater than zero such that: if the absolute value of $x$ minus $a$ is less than delta, then the absolute value of $f(x)$ minus $f(a)$ is less than epsilon" |
+| $P \Leftrightarrow Q$ | „$P$ gilt genau dann wenn $Q$ gilt" | "$P$ if and only if $Q$" |
+| $\exists! x \in \mathbb{R}: x^2 = 0$ | „Es gibt genau ein $x$ in den reellen Zahlen, sodass $x$ quadrat gleich null" | "there exists exactly one $x$ in the reals such that $x$ squared equals zero" |
 
 ---
 
@@ -213,19 +216,14 @@
 | $\limsup$ | `\limsup` | Limes superior | Limit superior | „Limes superior von" / „lim sup von" |
 | $\liminf$ | `\liminf` | Limes inferior | Limit inferior | „Limes inferior von" / „lim inf von" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}$
-  → „Das Integral von null bis Unendlich von $e$ hoch minus $x$ quadrat nach $x$ ist gleich Wurzel aus Pi geteilt durch zwei"
-
-- $\frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u$
-  → „Die zweite partielle Ableitung von $u$ nach $t$ ist gleich $c$ quadrat mal Nabla-Quadrat von $u$"
-
-- $\sum_{n=0}^{\infty} \frac{x^n}{n!} = e^x$
-  → „Die Summe von $n$ gleich null bis Unendlich von $x$ hoch $n$ durch $n$-Fakultät ist gleich $e$ hoch $x$"
-
-- $\oint_C \mathbf{F} \cdot d\mathbf{r}$
-  → „Das Kurvenintegral über $C$ von $F$ Skalar $d r$"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $\int_0^\infty e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}$ | „Das Integral von null bis Unendlich von $e$ hoch minus $x$ quadrat nach $x$ ist gleich Wurzel Pi durch zwei" | "the integral from zero to infinity of $e$ to the minus $x$ squared with respect to $x$ equals root pi over two" |
+| $\frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u$ | „Die zweite partielle Ableitung von $u$ nach $t$ ist gleich $c$ quadrat mal Nabla-Quadrat von $u$" | "the second partial derivative of $u$ with respect to $t$ equals $c$ squared times the Laplacian of $u$" |
+| $\sum_{n=0}^{\infty} \frac{x^n}{n!} = e^x$ | „Die Summe von $n$ gleich null bis Unendlich von $x$ hoch $n$ durch $n$-Fakultät ist gleich $e$ hoch $x$" | "the sum from $n$ equals zero to infinity of $x$ to the $n$ over $n$ factorial equals $e$ to the $x$" |
+| $\oint_C \mathbf{F} \cdot d\mathbf{r}$ | „Das Kurvenintegral über $C$ von $F$ Skalar $dr$" | "the line integral around $C$ of $F$ dot $dr$" |
 
 ---
 
@@ -271,12 +269,14 @@
 | $O$ | `O` | Nullmatrix | Zero matrix | „Nullmatrix" |
 | $\text{diag}(a_1, \ldots, a_n)$ | `\text{diag}` | Diagonalmatrix | Diagonal matrix | „Diagonalmatrix mit Einträgen $a_1$ bis $a_n$" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $A\mathbf{x} = \mathbf{b}$ → „$A$ mal $x$ gleich $b$"
-- $\det(A - \lambda I) = 0$ → „Determinante von $A$ minus Lambda mal Einheitsmatrix, gleich null"
-- $\langle \mathbf{u}, \mathbf{v} \rangle = \|\mathbf{u}\|\, \|\mathbf{v}\| \cos\theta$ → „Skalarprodukt von $u$ und $v$ gleich Norm von $u$ mal Norm von $v$ mal Kosinus Theta"
-- $V = \ker(A) \oplus \text{im}(A^T)$ → „$V$ ist direkte Summe aus Kern von $A$ und Bild von $A$ transponiert"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $A\mathbf{x} = \mathbf{b}$ | „$A$ mal $x$ gleich $b$" | "$A$ times $x$ equals $b$" |
+| $\det(A - \lambda I) = 0$ | „Determinante von $A$ minus Lambda mal Einheitsmatrix, gleich null" | "determinant of $A$ minus lambda times the identity, equals zero" |
+| $\langle \mathbf{u}, \mathbf{v} \rangle = \|\mathbf{u}\|\, \|\mathbf{v}\| \cos\theta$ | „Skalarprodukt von $u$ und $v$ gleich Norm von $u$ mal Norm von $v$ mal Kosinus Theta" | "the inner product of $u$ and $v$ equals the norm of $u$ times the norm of $v$ times cosine theta" |
+| $V = \ker(A) \oplus \text{im}(A^T)$ | „$V$ ist direkte Summe aus Kern von $A$ und Bild von $A$ transponiert" | "$V$ is the direct sum of the kernel of $A$ and the image of $A$ transpose" |
 
 ---
 
@@ -318,11 +318,13 @@
 | $\langle a \rangle$ | `\langle a \rangle` | Von $a$ erzeugte Gruppe | Generated by $a$ | „die von $a$ erzeugte Gruppe" |
 | $\langle a_1, \ldots, a_n \rangle$ | `\langle a_1,\ldots,a_n\rangle` | Von $a_1,\ldots,a_n$ erzeugt | Generated by | „die von $a_1$ bis $a_n$ erzeugte Gruppe" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $H \trianglelefteq G \Rightarrow G/H$ ist eine Gruppe → „$H$ ist Normalteiler in $G$, folglich ist $G$ modulo $H$ eine Gruppe"
-- $|\text{GL}_n(\mathbb{F}_q)| = \prod_{k=0}^{n-1}(q^n - q^k)$ → „Die Ordnung der allgemeinen linearen Gruppe..."
-- $a \equiv b \pmod{n}$ → „$a$ kongruent $b$ modulo $n$" (d.h. „$n$ teilt $a$ minus $b$")
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $H \trianglelefteq G \Rightarrow G/H$ ist eine Gruppe | „$H$ ist Normalteiler in $G$, folglich ist $G$ modulo $H$ eine Gruppe" | "$H$ is a normal subgroup of $G$, hence $G$ mod $H$ is a group" |
+| $\|\text{GL}_n(\mathbb{F}_q)\| = \prod_{k=0}^{n-1}(q^n - q^k)$ | „Die Ordnung der allgemeinen linearen Gruppe $GL_n$ über $\mathbb{F}_q$ ist das Produkt von $k$ gleich null bis $n$ minus eins von $q^n$ minus $q^k$" | "the order of $GL_n$ over $\mathbb{F}_q$ is the product from $k$ equals zero to $n$ minus one of $q$ to the $n$ minus $q$ to the $k$" |
+| $a \equiv b \pmod{n}$ | „$a$ kongruent $b$ modulo $n$" | "$a$ is congruent to $b$ mod $n$" |
 
 ---
 
@@ -363,11 +365,13 @@
 | $\xrightarrow{p}$ | `\xrightarrow{p}` | Stochastische Konvergenz | Convergence in probability | „konvergiert stochastisch gegen" |
 | $\xrightarrow{a.s.}$ | `\xrightarrow{a.s.}` | Fast sichere Konvergenz | Almost sure convergence | „konvergiert fast sicher gegen" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $P(A \mid B) = \frac{P(A \cap B)}{P(B)}$ → „Wahrscheinlichkeit von $A$ gegeben $B$ ist gleich Wahrscheinlichkeit von $A$ und $B$ geteilt durch Wahrscheinlichkeit von $B$"
-- $X \sim \mathcal{N}(0,1)$ → „$X$ ist standardnormalverteilt"
-- $\mathbb{E}[X^2] = \text{Var}(X) + (\mathbb{E}[X])^2$ → „Erwartungswert von $X$ quadrat gleich Varianz von $X$ plus Erwartungswert von $X$ im Quadrat"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $P(A \mid B) = \frac{P(A \cap B)}{P(B)}$ | „Wahrscheinlichkeit von $A$ gegeben $B$ ist gleich Wahrscheinlichkeit von $A$ und $B$ geteilt durch Wahrscheinlichkeit von $B$" | "the probability of $A$ given $B$ equals the probability of $A$ and $B$ over the probability of $B$" |
+| $X \sim \mathcal{N}(0,1)$ | „$X$ ist standardnormalverteilt" | "$X$ follows a standard normal distribution" / "$X$ is standard normal" |
+| $\mathbb{E}[X^2] = \text{Var}(X) + (\mathbb{E}[X])^2$ | „Erwartungswert von $X$ quadrat gleich Varianz von $X$ plus Erwartungswert von $X$ im Quadrat" | "the expected value of $X$ squared equals the variance of $X$ plus the square of the expected value of $X$" |
 
 ---
 
@@ -399,10 +403,12 @@
 | $\{x\}$ | `\{x\}` | Gebrochener Anteil | Fractional part | „der gebrochene Anteil von $x$" |
 | $\text{ord}_m(a)$ | `\text{ord}_m(a)` | Ordnung von $a$ modulo $m$ | Order mod $m$ | „Ordnung von $a$ modulo $m$" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $a^{\varphi(n)} \equiv 1 \pmod{n}$ → „$a$ hoch Phi von $n$ ist kongruent zu $1$ modulo $n$" (Satz von Euler)
-- $\gcd(a,b) \cdot \text{lcm}(a,b) = a \cdot b$ → „ggT von $a$ und $b$ mal kgV von $a$ und $b$ gleich $a$ mal $b$"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $a^{\varphi(n)} \equiv 1 \pmod{n}$ | „$a$ hoch Phi von $n$ ist kongruent zu $1$ modulo $n$" (Satz von Euler) | "$a$ to the phi of $n$ is congruent to one mod $n$" (Euler's theorem) |
+| $\gcd(a,b) \cdot \text{lcm}(a,b) = a \cdot b$ | „ggT von $a$ und $b$ mal kgV von $a$ und $b$ gleich $a$ mal $b$" | "the gcd of $a$ and $b$ times the lcm of $a$ and $b$ equals $a$ times $b$" |
 
 ---
 
@@ -436,10 +442,12 @@
 | $\Sigma X$ | `\Sigma X` | Suspension | Suspension | „Suspension von $X$" |
 | $\Omega X$ | `\Omega X` | Schleifenraum | Loop space | „Schleifenraum von $X$" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $\overline{A} = A \cup \partial A$ → „Der Abschluss von $A$ ist gleich $A$ vereinigt mit dem Rand von $A$"
-- $\pi_1(S^1) \cong \mathbb{Z}$ → „Die Fundamentalgruppe der Eins-Sphäre ist isomorph zu den ganzen Zahlen"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $\overline{A} = A \cup \partial A$ | „Der Abschluss von $A$ ist gleich $A$ vereinigt mit dem Rand von $A$" | "the closure of $A$ equals $A$ union the boundary of $A$" |
+| $\pi_1(S^1) \cong \mathbb{Z}$ | „Die Fundamentalgruppe der Eins-Sphäre ist isomorph zu den ganzen Zahlen" | "the fundamental group of the one-sphere is isomorphic to the integers" |
 
 ---
 
@@ -472,10 +480,12 @@
 | $\iota_X \omega$ | `\iota_X \omega` | Innere Multiplikation | Interior product | „innere Multiplikation von $\omega$ mit $X$" |
 | $\Omega^k(M)$ | `\Omega^k(M)` | $k$-Formen auf $M$ | $k$-forms on $M$ | „$k$-Formen auf $M$" |
 
-### Beispiele (Ausgesprochen)
+### Beispiele (Ausgesprochen / Spoken)
 
-- $d(d\omega) = 0$ → „Die äußere Ableitung der äußeren Ableitung von Omega ist null"
-- $\int_M d\omega = \int_{\partial M} \omega$ (Stokes) → „Das Integral von $d\omega$ über $M$ ist gleich dem Integral von Omega über den Rand von $M$"
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $d(d\omega) = 0$ | „Die äußere Ableitung der äußeren Ableitung von Omega ist null" | "the exterior derivative of the exterior derivative of omega is zero" |
+| $\int_M d\omega = \int_{\partial M} \omega$ | „Das Integral von $d\omega$ über $M$ ist gleich dem Integral von Omega über den Rand von $M$" (Stokes) | "the integral of $d$ omega over $M$ equals the integral of omega over the boundary of $M$" (Stokes' theorem) |
 
 ---
 
@@ -590,33 +600,33 @@
 
 ### Brüche und Ausdrücke
 
-| Formel | Ausgesprochen |
-|--------|--------------|
-| $\frac{a}{b}$ | „$a$ durch $b$" / „$a$ über $b$" |
-| $\frac{d}{dx}f(x)$ | „$d$ nach $dx$ von $f(x)$" / „Ableitung von $f$ nach $x$" |
-| $\frac{\partial f}{\partial x_i}$ | „partiell $f$ nach $x_i$" |
-| $\frac{1}{2\pi i} \oint_C$ | „eins durch zwei Pi $i$, Kurvenintegral über $C$" |
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $\frac{a}{b}$ | „$a$ durch $b$" / „$a$ über $b$" | "$a$ over $b$" / "$a$ divided by $b$" |
+| $\frac{d}{dx}f(x)$ | „$d$ nach $dx$ von $f(x)$" / „Ableitung von $f$ nach $x$" | "the derivative of $f$ with respect to $x$" / "$d f$ $d x$" |
+| $\frac{\partial f}{\partial x_i}$ | „partiell $f$ nach $x_i$" | "the partial derivative of $f$ with respect to $x_i$" |
+| $\frac{1}{2\pi i} \oint_C$ | „eins durch zwei Pi $i$, Kurvenintegral über $C$" | "one over two pi $i$, contour integral around $C$" |
 
 ### Indizes und Exponenten
 
-| Formel | Ausgesprochen |
-|--------|--------------|
-| $a_{ij}$ | „$a$ sub $i j$" / „$a$ mit Index $i j$" |
-| $x^{(k)}$ | „$x$ hoch rund $k$" / „$k$-te Ableitung" (kontextabhängig) |
-| $T^i{}_j$ | „Tensor $T$ mit obem Index $i$ und unterem Index $j$" |
-| $\sum_{i,j}$ | „Summe über $i$ und $j$" |
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $a_{ij}$ | „$a$ sub $i j$" / „$a$ mit Index $i j$" | "$a$ sub $i j$" / "$a$ indexed by $i j$" |
+| $x^{(k)}$ | „$x$ hoch rund $k$" / „$k$-te Ableitung" (kontextabhängig) | "$x$ superscript $k$ in parentheses" / "the $k$-th derivative" (context-dependent) |
+| $T^i{}_j$ | „Tensor $T$ mit oberem Index $i$ und unterem Index $j$" | "tensor $T$ with upper index $i$ and lower index $j$" |
+| $\sum_{i,j}$ | „Summe über $i$ und $j$" | "sum over $i$ and $j$" |
 
 ### Abbildungen
 
-| Formel | Ausgesprochen |
-|--------|--------------|
-| $f: A \to B$ | „$f$ von $A$ nach $B$" |
-| $x \mapsto x^2$ | „$x$ wird abgebildet auf $x$ quadrat" |
-| $f \circ g$ | „$f$ nach $g$" |
-| $f^{-1}(B)$ | „Urbild von $B$ unter $f$" |
-| $f|_A$ | „$f$ eingeschränkt auf $A$" |
+| Formel | Deutsch | English |
+|--------|---------|---------|
+| $f: A \to B$ | „$f$ von $A$ nach $B$" | "$f$ from $A$ to $B$" |
+| $x \mapsto x^2$ | „$x$ wird abgebildet auf $x$ quadrat" | "$x$ maps to $x$ squared" |
+| $f \circ g$ | „$f$ nach $g$" | "$f$ composed with $g$" / "$f$ of $g$" |
+| $f^{-1}(B)$ | „Urbild von $B$ unter $f$" | "the preimage of $B$ under $f$" |
+| $f\|_A$ | „$f$ eingeschränkt auf $A$" | "$f$ restricted to $A$" |
 
 ---
 
-*Erstellt als persönliche Sprachreferenz für mathematische Notation.*
+*Erstellt als persönliche Sprachreferenz für mathematische Notation.*  
 *Basiert auf ISO 80000-2, gängiger Lehrbuchtradition (DE/EN) und Vortragskonventionen.*
