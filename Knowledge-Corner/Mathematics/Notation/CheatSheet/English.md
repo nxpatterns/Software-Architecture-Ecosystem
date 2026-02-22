@@ -1,7 +1,7 @@
 # Mathematical Notation — Language Reference
 
-> **Goal:** Verbalize any formula fluently without having to look it up.  
-> **Structure:** Symbol | LaTeX | English Name | Spoken (EN)  
+> **Goal:** Verbalize any formula fluently without having to look it up.
+> **Structure:** Symbol | LaTeX | English Name | Spoken (EN)
 > **Legend:** "Spoken" = how you say it in a lecture, seminar, or conversation.
 
 ---
@@ -154,9 +154,14 @@
 
 | Formula | Spoken |
 |---------|--------|
-| $\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$ | "for all epsilon greater than zero there exists delta greater than zero such that: if the absolute value of $x$ minus $a$ is less than delta, then the absolute value of $f$ of $x$ minus $f$ of $a$ is less than epsilon" |
 | $P \Leftrightarrow Q$ | "$P$ if and only if $Q$" |
 | $\exists! x \in \mathbb{R}: x^2 = 0$ | "there exists exactly one $x$ in the reals such that $x$ squared equals zero" |
+
+**Example with quantifiers:**
+
+$$\forall \varepsilon > 0\ \exists \delta > 0: |x - a| < \delta \Rightarrow |f(x) - f(a)| < \varepsilon$$
+
+*Spoken: "for all epsilon greater than zero there exists delta greater than zero such that: if the absolute value of $x$ minus $a$ is less than delta, then the absolute value of $f$ of $x$ minus $f$ of $a$ is less than epsilon"*
 
 ---
 
@@ -626,5 +631,5 @@
 
 ---
 
-*Created as a personal language reference for mathematical notation.*  
+*Created as a personal language reference for mathematical notation.*
 *Based on ISO 80000-2, standard textbook conventions (DE/EN), and lecture practice.*
