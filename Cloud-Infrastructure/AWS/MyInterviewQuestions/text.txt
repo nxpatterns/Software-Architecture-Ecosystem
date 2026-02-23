@@ -1,0 +1,9 @@
+I wouldn't personally recommend AWS, but I've worked on enough projects where it was non-negotiable. So I built a list of questions I used to screen AWS Expert candidates. Now I'm making it public — questions and answers, as a PDF.
+
+📎 [Link]
+
+Personally? I'd take Azure over AWS any day. And if I had full freedom of choice, my go-to would be Hetzner Cloud — massively underrated, unbeatable price-to-performance ratio. The catch: you have to do everything yourself. If you can, you might pay €50 instead of €5,000.
+
+With AI taking over infrastructure decisions anyway, there's no reason to keep these notes locked away. I've had Claude clean them up, fill in the gaps, and keep them current. Answers should be accurate &rarr; but as always: no guarantees.
+
+#AWS #CloudArchitecture #HetznerCloud #CloudComputing #DevOps #InterviewPrep #SoftwareArchitecture
