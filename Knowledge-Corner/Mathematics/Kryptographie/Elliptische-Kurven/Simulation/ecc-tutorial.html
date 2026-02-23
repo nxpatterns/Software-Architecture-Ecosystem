@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elliptische Kurven & Kryptographie</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent: #00ff88;
+    --accent2: #ff3366;
+    --accent3: #3388ff;
+    --text: #e0e0f0;
+    --muted: #666688;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Fraunces', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(0,255,136,0.3);
+  }
+
+  header p {
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 2rem 2rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .tab:first-child { border-radius: 8px 0 0 0; }
+  .tab:last-child { border-radius: 0 8px 0 0; }
+
+  .tab.active {
+    background: var(--surface);
+    color: var(--accent);
+    border-color: var(--accent);
+    border-bottom: 1px solid var(--surface);
+    margin-bottom: -1px;
+  }
+
+  .tab:hover:not(.active) { color: var(--text); border-color: var(--muted); }
+
+  .panels { padding: 2rem; max-width: 1000px; margin: 0 auto; }
+
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .panel-title {
+    font-size: 1.6rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .panel-desc {
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    margin-bottom: 2rem;
+  }
+
+  canvas {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  button.ctrl {
+    padding: 0.6rem 1.4rem;
+    background: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  button.ctrl:hover { background: var(--accent); color: var(--bg); }
+  button.ctrl.danger { border-color: var(--accent2); color: var(--accent2); }
+  button.ctrl.danger:hover { background: var(--accent2); color: white; }
+
+  .info-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.5rem;
+    margin-top: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .info-box .label {
+    color: var(--accent);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .highlight { color: var(--accent); font-weight: 700; }
+  .highlight2 { color: var(--accent2); font-weight: 700; }
+  .highlight3 { color: var(--accent3); font-weight: 700; }
+
+  /* Panel 3: forward/backward */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .comp-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+
+  .comp-box h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .comp-box.easy { border-color: var(--accent); }
+  .comp-box.easy h3 { color: var(--accent); }
+  .comp-box.hard { border-color: var(--accent2); }
+  .comp-box.hard h3 { color: var(--accent2); }
+
+  .step-list { list-style: none; }
+  .step-list li {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+
+  .step-list li.done { color: var(--text); }
+  .step-list li.active-step { color: var(--accent); }
+  .step-list li.active-step.hard-step { color: var(--accent2); }
+
+  .big-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent2);
+    word-break: break-all;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 1rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .progress-fill.hard { background: var(--accent2); }
+
+  @media (max-width: 600px) {
+    .comparison { grid-template-columns: 1fr; }
+    .tabs { flex-direction: column; align-items: center; }
+    .tab { border-radius: 0; width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Elliptische Kurven & Kryptographie</h1>
+  <p>// interaktive Visualisierung — für Studenten</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPanel(0)">01 · Kurve &amp; Addition</button>
+  <button class="tab" onclick="showPanel(1)">02 · k·P Sprünge</button>
+  <button class="tab" onclick="showPanel(2)">03 · Warum sicher?</button>
+</div>
+
+<div class="panels">
+
+  <!-- PANEL 1: Geometric addition -->
+  <div class="panel active" id="panel-0">
+    <div class="panel-title">Punkt-Addition auf der Kurve</div>
+    <div class="panel-desc">// y² = x³ − 3x + 3 — reelle Zahlen zur Veranschaulichung</div>
+    <canvas id="c1" width="600" height="400"></canvas>
+    <div class="controls">
+      <button class="ctrl" onclick="addStep()">Schritt weiter →</button>
+      <button class="ctrl danger" onclick="resetCurve()">Reset</button>
+    </div>
+    <div class="info-box" id="info1">
+      <span class="label">SCHRITT 0</span>
+      Wähle zwei Punkte P und Q auf der Kurve. Klicke auf "Schritt weiter".
+    </div>
+  </div>
+
+  <!-- PANEL 2: k·P on finite field -->
+  <div class="panel" id="panel-1">
+    <div class="panel-title">k·P auf einem endlichen Körper</div>
+    <div class="panel-desc">// F_p mit p = 17 — Punkte "springen" scheinbar zufällig</div>
+    <canvas id="c2" width="600" height="400"></canvas>
+    <div class="controls">
+      <button class="ctrl" onclick="nextJump()">Nächster Sprung →</button>
+      <button class="ctrl" onclick="autoJump()">Auto-Play</button>
+      <button class="ctrl danger" onclick="resetJumps()">Reset</button>
+    </div>
+    <div class="info-box" id="info2">
+      <span class="label">k = 1</span>
+      Startpunkt P = (5, 1) auf der Kurve y² ≡ x³ + 2x + 2 (mod 17).
+      Beobachte: Die Sprünge wirken <span class="highlight2">zufällig und unvorhersehbar</span>.
+    </div>
+  </div>
+
+  <!-- PANEL 3: Forward vs backward -->
+  <div class="panel" id="panel-2">
+    <div class="panel-title">Vorwärts leicht — Rückwärts unmöglich</div>
+    <div class="panel-desc">// Das diskrete Logarithmusproblem auf elliptischen Kurven</div>
+    <div class="comparison">
+      <div class="comp-box easy">
+        <h3>✓ VORWÄRTS: k·P berechnen</h3>
+        <ul class="step-list" id="forward-steps">
+          <li>Starte bei P</li>
+          <li>Verdopple P → 2P</li>
+          <li>Addiere P → 3P</li>
+          <li>Verdopple → 4P</li>
+          <li>Addiere → 5P</li>
+          <li>Verdopple → 6P</li>
+          <li>...</li>
+          <li id="forward-final">→ k·P in ~log₂(k) Schritten</li>
+        </ul>
+        <div class="progress-bar"><div class="progress-fill" id="fwd-bar" style="width:0%"></div></div>
+      </div>
+      <div class="comp-box hard">
+        <h3>✗ RÜCKWÄRTS: k aus Q=k·P finden</h3>
+        <ul class="step-list" id="backward-steps">
+          <li>Wir kennen P und Q</li>
+          <li>Probiere k=1: 1·P = ?</li>
+          <li>Probiere k=2: 2·P = ?</li>
+          <li>Probiere k=3: 3·P = ?</li>
+          <li>Probiere k=4: 4·P = ?</li>
+          <li>...</li>
+          <li>Mögliche Werte: <span class="highlight2">2²⁵⁶</span></li>
+          <li id="backward-final" class="big-number"></li>
+        </ul>
+        <div class="progress-bar"><div class="progress-fill hard" id="bwd-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl" onclick="runComparison()">Simulation starten</button>
+      <button class="ctrl danger" onclick="resetComparison()">Reset</button>
+    </div>
+    <div class="info-box" id="info3">
+      <span class="label">KERNERKENNTNIS</span>
+      <span class="highlight">k</span> ist der <span class="highlight">private Schlüssel</span>.
+      <span class="highlight3">Q = k·P</span> ist der <span class="highlight3">öffentliche Schlüssel</span>.
+      Vorwärts: millisekunden. Rückwärts: länger als das Universum alt ist.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── PANEL 1: Geometric curve addition ───────────────────────────────────────
+const c1 = document.getElementById('c1');
+const ctx1 = c1.getContext('2d');
+// y² = x³ - 3x + 3
+function f(x) { return x*x*x - 3*x + 3; }
+
+let step = 0;
+// Fixed points on curve
+const P = { x: -1.5, y: -Math.sqrt(f(-1.5)) }; // bottom
+const Q = { x: 1.0,  y: Math.sqrt(f(1.0)) };
+
+function toCanvas1(x, y) {
+  // map x: [-3,3] y: [-5,5] to canvas
+  return {
+    cx: (x + 3) / 6 * c1.width,
+    cy: (1 - (y + 5) / 10) * c1.height
+  };
+}
+
+function fromCanvas1(cx, cy) {
+  return {
+    x: cx / c1.width * 6 - 3,
+    y: (1 - cy / c1.height) * 10 - 5
+  };
+}
+
+function drawCurve1() {
+  ctx1.clearRect(0, 0, c1.width, c1.height);
+
+  // Grid
+  ctx1.strokeStyle = '#1e1e2e';
+  ctx1.lineWidth = 1;
+  for (let i = -3; i <= 3; i++) {
+    const {cx} = toCanvas1(i, 0);
+    ctx1.beginPath(); ctx1.moveTo(cx, 0); ctx1.lineTo(cx, c1.height); ctx1.stroke();
+  }
+  for (let j = -5; j <= 5; j++) {
+    const {cy} = toCanvas1(0, j);
+    ctx1.beginPath(); ctx1.moveTo(0, cy); ctx1.lineTo(c1.width, cy); ctx1.stroke();
+  }
+
+  // Axes
+  ctx1.strokeStyle = '#333355';
+  ctx1.lineWidth = 2;
+  const ax = toCanvas1(0, 0);
+  ctx1.beginPath(); ctx1.moveTo(0, ax.cy); ctx1.lineTo(c1.width, ax.cy); ctx1.stroke();
+  ctx1.beginPath(); ctx1.moveTo(ax.cx, 0); ctx1.lineTo(ax.cx, c1.height); ctx1.stroke();
+
+  // Curve
+  ctx1.strokeStyle = '#00ff88';
+  ctx1.lineWidth = 2.5;
+  ctx1.beginPath();
+  let first = true;
+  for (let x = -2.8; x <= 3; x += 0.01) {
+    const y2 = f(x);
+    if (y2 < 0) { first = true; continue; }
+    const y = Math.sqrt(y2);
+    const p = toCanvas1(x, y);
+    if (first) { ctx1.moveTo(p.cx, p.cy); first = false; }
+    else ctx1.lineTo(p.cx, p.cy);
+  }
+  ctx1.stroke();
+  ctx1.beginPath();
+  first = true;
+  for (let x = -2.8; x <= 3; x += 0.01) {
+    const y2 = f(x);
+    if (y2 < 0) { first = true; continue; }
+    const y = -Math.sqrt(y2);
+    const p = toCanvas1(x, y);
+    if (first) { ctx1.moveTo(p.cx, p.cy); first = false; }
+    else ctx1.lineTo(p.cx, p.cy);
+  }
+  ctx1.stroke();
+}
+
+function drawPoint1(x, y, color, label) {
+  const {cx, cy} = toCanvas1(x, y);
+  ctx1.beginPath();
+  ctx1.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx1.fillStyle = color;
+  ctx1.fill();
+  ctx1.strokeStyle = '#0a0a0f';
+  ctx1.lineWidth = 2;
+  ctx1.stroke();
+  ctx1.fillStyle = color;
+  ctx1.font = 'bold 14px JetBrains Mono, monospace';
+  ctx1.fillText(label, cx + 10, cy - 8);
+}
+
+// Compute P+Q geometrically on real curve y²=x³-3x+3
+function computeAddition(px, py, qx, qy) {
+  if (Math.abs(px - qx) < 1e-9) return null;
+  const m = (qy - py) / (qx - px);
+  const rx = m * m - px - qx;
+  const ry = -(py + m * (rx - px));
+  return { x: rx, y: ry };
+}
+
+let addState = 0;
+let R = null;
+let Rneg = null;
+
+function addStep() {
+  drawCurve1();
+  if (addState === 0) {
+    drawPoint1(P.x, P.y, '#00ff88', 'P');
+    drawPoint1(Q.x, Q.y, '#3388ff', 'Q');
+    addState = 1;
+    document.getElementById('info1').innerHTML = '<span class="label">SCHRITT 1</span>Zeichne eine Gerade durch <span class="highlight">P</span> und <span class="highlight3">Q</span>.';
+  } else if (addState === 1) {
+    drawPoint1(P.x, P.y, '#00ff88', 'P');
+    drawPoint1(Q.x, Q.y, '#3388ff', 'Q');
+    // Draw line
+    const m = (Q.y - P.y) / (Q.x - P.x);
+    ctx1.strokeStyle = '#ffffff33';
+    ctx1.lineWidth = 1.5;
+    ctx1.setLineDash([5, 5]);
+    ctx1.beginPath();
+    const x0 = -3, x1 = 3;
+    const y0 = P.y + m * (x0 - P.x);
+    const y1 = P.y + m * (x1 - P.x);
+    ctx1.moveTo(toCanvas1(x0, y0).cx, toCanvas1(x0, y0).cy);
+    ctx1.lineTo(toCanvas1(x1, y1).cx, toCanvas1(x1, y1).cy);
+    ctx1.stroke();
+    ctx1.setLineDash([]);
+
+    // Compute third intersection
+    Rneg = computeAddition(P.x, P.y, Q.x, Q.y);
+    R = { x: Rneg.x, y: -Rneg.y };
+
+    drawPoint1(Rneg.x, Rneg.y, '#ff3366', "R'");
+    addState = 2;
+    document.getElementById('info1').innerHTML = '<span class="label">SCHRITT 2</span>Die Gerade schneidet die Kurve an einem dritten Punkt <span class="highlight2">R\'</span>.';
+  } else if (addState === 2) {
+    drawPoint1(P.x, P.y, '#00ff88', 'P');
+    drawPoint1(Q.x, Q.y, '#3388ff', 'Q');
+    drawPoint1(Rneg.x, Rneg.y, '#ff3366', "R'");
+
+    // Mirror line
+    ctx1.strokeStyle = '#ffffff22';
+    ctx1.lineWidth = 1.5;
+    ctx1.setLineDash([3, 3]);
+    ctx1.beginPath();
+    ctx1.moveTo(toCanvas1(Rneg.x, Rneg.y).cx, toCanvas1(Rneg.x, Rneg.y).cy);
+    ctx1.lineTo(toCanvas1(R.x, R.y).cx, toCanvas1(R.x, R.y).cy);
+    ctx1.stroke();
+    ctx1.setLineDash([]);
+
+    drawPoint1(R.x, R.y, '#ffcc00', 'P+Q');
+    addState = 0;
+    document.getElementById('info1').innerHTML = `<span class="label">ERGEBNIS</span>Spiegele R' an der x-Achse → <span class="highlight">P+Q = (${R.x.toFixed(2)}, ${R.y.toFixed(2)})</span>. Das Ergebnis liegt wieder auf der Kurve — <span class="highlight">Abgeschlossenheit</span> der Gruppe ist erfüllt.`;
+  }
+}
+
+function resetCurve() {
+  addState = 0;
+  R = null; Rneg = null;
+  drawCurve1();
+  drawPoint1(P.x, P.y, '#00ff88', 'P');
+  drawPoint1(Q.x, Q.y, '#3388ff', 'Q');
+  document.getElementById('info1').innerHTML = '<span class="label">SCHRITT 0</span>Wähle zwei Punkte P und Q auf der Kurve. Klicke auf "Schritt weiter".';
+}
+
+// ─── PANEL 2: k·P on F_17 ────────────────────────────────────────────────────
+// y² ≡ x³ + 2x + 2 (mod 17)
+const p = 17;
+
+function modp(n) { return ((n % p) + p) % p; }
+function modInv(a) {
+  // Extended Euclidean
+  let [old_r, r] = [modp(a), p];
+  let [old_s, s] = [1, 0];
+  while (r !== 0) {
+    const q = Math.floor(old_r / r);
+    [old_r, r] = [r, old_r - q * r];
+    [old_s, s] = [s, old_s - q * s];
+  }
+  return modp(old_s);
+}
+
+function ecAdd(P, Q) {
+  if (!P) return Q;
+  if (!Q) return P;
+  if (P.x === Q.x && P.y !== Q.y) return null; // infinity
+  let m;
+  if (P.x === Q.x && P.y === Q.y) {
+    // doubling: m = (3x² + a) / 2y
+    m = modp(modp(3 * P.x * P.x + 2) * modInv(2 * P.y));
+  } else {
+    m = modp(modp(Q.y - P.y) * modInv(Q.x - P.x));
+  }
+  const rx = modp(m * m - P.x - Q.x);
+  const ry = modp(m * (P.x - rx) - P.y);
+  return { x: rx, y: ry };
+}
+
+// Precompute all points
+const startP = { x: 5, y: 1 };
+let kPoints = [startP];
+{
+  let cur = startP;
+  for (let i = 1; i < p + 5; i++) {
+    const next = ecAdd(cur, startP);
+    if (!next) break;
+    kPoints.push(next);
+    cur = next;
+    if (cur.x === startP.x && cur.y === startP.y) break;
+  }
+}
+
+let jumpIdx = 0;
+let autoTimer = null;
+
+const c2 = document.getElementById('c2');
+const ctx2 = c2.getContext('2d');
+
+function toCanvas2(x, y) {
+  const pad = 40;
+  return {
+    cx: pad + (x / (p - 1)) * (c2.width - 2 * pad),
+    cy: c2.height - pad - (y / (p - 1)) * (c2.height - 2 * pad)
+  };
+}
+
+function drawGrid2() {
+  ctx2.clearRect(0, 0, c2.width, c2.height);
+  ctx2.strokeStyle = '#1e1e2e';
+  ctx2.lineWidth = 1;
+  for (let i = 0; i < p; i++) {
+    const {cx} = toCanvas2(i, 0);
+    const {cy} = toCanvas2(0, i);
+    ctx2.beginPath(); ctx2.moveTo(cx, 0); ctx2.lineTo(cx, c2.height); ctx2.stroke();
+    ctx2.beginPath(); ctx2.moveTo(0, cy); ctx2.lineTo(c2.width, cy); ctx2.stroke();
+  }
+
+  // Labels
+  ctx2.fillStyle = '#333355';
+  ctx2.font = '10px JetBrains Mono, monospace';
+  for (let i = 0; i < p; i += 4) {
+    const {cx} = toCanvas2(i, 0);
+    const {cy} = toCanvas2(0, i);
+    ctx2.fillText(i, cx - 4, c2.height - 5);
+    ctx2.fillText(i, 5, cy + 4);
+  }
+}
+
+function drawJumps() {
+  drawGrid2();
+
+  // Draw all points faint
+  for (let k = 0; k < kPoints.length; k++) {
+    const pt = kPoints[k];
+    const {cx, cy} = toCanvas2(pt.x, pt.y);
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx2.fillStyle = '#1e2e44';
+    ctx2.fill();
+  }
+
+  // Draw path up to jumpIdx
+  for (let k = 0; k <= jumpIdx && k < kPoints.length; k++) {
+    const pt = kPoints[k];
+    const {cx, cy} = toCanvas2(pt.x, pt.y);
+
+    if (k > 0) {
+      const prev = kPoints[k - 1];
+      const {cx: px, cy: py} = toCanvas2(prev.x, prev.y);
+      ctx2.beginPath();
+      ctx2.moveTo(px, py);
+      ctx2.lineTo(cx, cy);
+      ctx2.strokeStyle = `rgba(51, 136, 255, ${0.3 + 0.7 * k / (jumpIdx || 1)})`;
+      ctx2.lineWidth = 1.5;
+      ctx2.setLineDash([4, 4]);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+    }
+
+    ctx2.beginPath();
+    ctx2.arc(cx, cy, k === jumpIdx ? 9 : 5, 0, Math.PI * 2);
+    ctx2.fillStyle = k === jumpIdx ? '#00ff88' : `rgba(51, 136, 255, 0.7)`;
+    ctx2.fill();
+
+    if (k === jumpIdx || k === 0) {
+      ctx2.fillStyle = k === jumpIdx ? '#00ff88' : '#3388ff';
+      ctx2.font = 'bold 11px JetBrains Mono, monospace';
+      const label = k === 0 ? 'P' : `${k+1}P`;
+      ctx2.fillText(label, cx + 10, cy - 5);
+    }
+  }
+}
+
+function nextJump() {
+  if (jumpIdx < kPoints.length - 1) {
+    jumpIdx++;
+    drawJumps();
+    const pt = kPoints[jumpIdx];
+    document.getElementById('info2').innerHTML =
+      `<span class="label">k = ${jumpIdx + 1}</span>
+      Aktueller Punkt: <span class="highlight">(${pt.x}, ${pt.y})</span> — 
+      Wirkt es wie ein Muster? <span class="highlight2">Nein.</span> Genau das ist die Sicherheit.`;
+  }
+}
+
+function autoJump() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; return; }
+  autoTimer = setInterval(() => {
+    if (jumpIdx >= kPoints.length - 1) { clearInterval(autoTimer); autoTimer = null; return; }
+    nextJump();
+  }, 400);
+}
+
+function resetJumps() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  jumpIdx = 0;
+  drawJumps();
+  document.getElementById('info2').innerHTML =
+    '<span class="label">k = 1</span>Startpunkt P = (5, 1). Klicke "Nächster Sprung" oder "Auto-Play".';
+}
+
+// ─── PANEL 3: Comparison ──────────────────────────────────────────────────────
+let compTimer = null;
+let fwdStep = 0;
+let bwdStep = 0;
+const totalFwd = 8;
+const bigNum = '115792089237316195423570985008687907853269984665640564039457584007908834671663';
+
+function runComparison() {
+  resetComparison();
+  // Forward: fast
+  fwdStep = 0;
+  const fwdItems = document.querySelectorAll('#forward-steps li');
+  const fwdBar = document.getElementById('fwd-bar');
+
+  let fwdTimer = setInterval(() => {
+    if (fwdStep < fwdItems.length) {
+      if (fwdStep > 0) fwdItems[fwdStep - 1].classList.remove('active-step');
+      fwdItems[fwdStep].classList.add('done', 'active-step');
+      fwdBar.style.width = ((fwdStep + 1) / fwdItems.length * 100) + '%';
+      fwdStep++;
+    } else {
+      clearInterval(fwdTimer);
+      document.getElementById('info3').innerHTML =
+        '<span class="label">ERGEBNIS</span>' +
+        '<span class="highlight">Vorwärts</span>: fertig in ~log₂(k) Schritten = blitzschnell. ' +
+        '<span class="highlight2">Rückwärts</span>: müsste 2²⁵⁶ ≈ 10⁷⁷ Möglichkeiten durchprobieren. ' +
+        'Selbst mit 10¹⁸ Versuchen/Sekunde würde das länger dauern als das Universum alt ist.';
+    }
+  }, 300);
+
+  // Backward: slow, simulated
+  bwdStep = 0;
+  const bwdItems = document.querySelectorAll('#backward-steps li');
+  const bwdBar = document.getElementById('bwd-bar');
+  const bwdFinal = document.getElementById('backward-final');
+
+  let bwdTimer = setInterval(() => {
+    if (bwdStep < bwdItems.length - 1) {
+      if (bwdStep > 0) bwdItems[bwdStep - 1].classList.remove('active-step');
+      bwdItems[bwdStep].classList.add('done', 'active-step', 'hard-step');
+      bwdBar.style.width = (bwdStep / (bwdItems.length - 1) * 5) + '%'; // never reaches 100
+      bwdStep++;
+    } else {
+      // Show big number
+      bwdFinal.textContent = '2²⁵⁶ = ' + bigNum + '... (nie fertig)';
+      bwdBar.style.width = '0.001%';
+      clearInterval(bwdTimer);
+    }
+  }, 900);
+}
+
+function resetComparison() {
+  document.querySelectorAll('#forward-steps li').forEach(li => li.classList.remove('done', 'active-step'));
+  document.querySelectorAll('#backward-steps li').forEach(li => li.classList.remove('done', 'active-step', 'hard-step'));
+  document.getElementById('fwd-bar').style.width = '0%';
+  document.getElementById('bwd-bar').style.width = '0%';
+  document.getElementById('backward-final').textContent = '';
+  document.getElementById('info3').innerHTML =
+    '<span class="label">KERNERKENNTNIS</span>' +
+    '<span class="highlight">k</span> ist der <span class="highlight">private Schlüssel</span>. ' +
+    '<span class="highlight3">Q = k·P</span> ist der <span class="highlight3">öffentliche Schlüssel</span>. ' +
+    'Vorwärts: millisekunden. Rückwärts: länger als das Universum alt ist.';
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function showPanel(idx) {
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  if (idx === 1) drawJumps();
+}
+
+// Init
+resetCurve();
+drawJumps();
+</script>
+</body>
+</html>
