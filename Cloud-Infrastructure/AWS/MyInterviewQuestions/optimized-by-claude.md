@@ -1078,4 +1078,6 @@ At the macro level, both platforms offer equivalent services for virtually every
 
 ---
 
+**One note:** any question touching on scaling concepts, I almost always pair with Kubernetes & Docker discussions — so those aren't covered here.
+
 *End of AWS Interview Q&A*

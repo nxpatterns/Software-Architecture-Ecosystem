@@ -6,4 +6,6 @@ Personally? I'd take Azure over AWS any day. And if I had full freedom of choice
 
 With AI taking over infrastructure decisions anyway, there's no reason to keep these notes locked away. I've had Claude clean them up, fill in the gaps, and keep them current. Answers should be accurate &rarr; but as always: no guarantees.
 
+One note: any question touching on scaling concepts, I almost always pair with Kubernetes & Docker discussions — so those aren't covered here.
+
 #AWS #CloudArchitecture #HetznerCloud #CloudComputing #DevOps #InterviewPrep #SoftwareArchitecture
