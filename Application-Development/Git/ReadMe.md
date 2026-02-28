@@ -125,6 +125,32 @@ If `git branch -a` shows remote branches that no longer exist on the remote, you
     git diff develop --shortstat
     git diff develop --compact-summary
 
+## Find/Search git log for any mention of .avif in diffs:
+
+```bash
+git log -S '.avif' --source --all --oneline
+```
+
+-S (the "pickaxe") searches for commits where the string .avif was added or removed. This gives you the commits that changed the count of that string, i.e., where it was introduced or deleted.
+
+### Scope it to specific file types:
+
+```bash
+git log -S '.avif' --all --oneline -- '*.scss' '*.ts' '*.html'
+```
+
+### See the actual diff for those commits:
+
+```bash
+git log -S '.avif' -p -- '*.scss' '*.ts' '*.html'
+```
+
+This shows you exactly which line was added/removed and in which file.
+
+**If you want to find the last commit where `.avif` was still present** (before removal), look at the two commits returned: the one where it was added and the one where it was removed. The removal commit is what you're after -- the parent of that commit is the last state where the reference existed.
+
+Quick tip: if `-S` returns nothing, try `-G '.avif'` instead. `-G` uses regex and matches any diff line containing the pattern, while `-S` counts occurrences. If someone replaced one `.avif` reference with another in the same commit, `-S` would miss it but `-G` would catch it.
+
 ## Find
 
 ```shell
