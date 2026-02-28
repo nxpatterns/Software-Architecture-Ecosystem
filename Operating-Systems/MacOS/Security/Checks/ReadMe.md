@@ -179,3 +179,44 @@ security find-certificate -a -Z /Library/Keychains/System.keychain 2>/dev/null
 # oder eingeschränkt auf relevante Informationen:
 security find-certificate -a -Z /Library/Keychains/System.keychain 2>/dev/null | grep "SHA-1 hash\|labl\|alist\|labl\|labl\|labl"
 ```
+
+## Spotlight Index prüfen
+
+### Was wird aktuell ausgeschlossen?
+
+```bash
+sudo defaults read /.Spotlight-V100/VolumeConfiguration.plist Exclusions 2>/dev/null
+```
+
+### Welche Volumes werden indexiert?
+
+```bash
+sudo mdutil -s -a
+```
+
+### Teile Spotlight mit: Never Index this Volume
+
+Die zuverlässigste Methode um das nach Updates zu erhalten ist eine `.metadata_never_index` Datei direkt auf dem Volume, das respektiert macOS auch nach Updates:
+
+```bash
+# Alle Volumes auflisten
+ls /Volumes/
+
+# Deaktivieren Label setzen
+sudo touch /Volumes/<volume-name>/.metadata_never_index
+
+# Bestehende Indexes löschen
+sudo mdutil -E /Volumes/<volume-name>
+```
+
+Hier wird es  wegen dem Blank im Namen Fehler passieren:
+
+```bash
+sudo mdutil -E "/Volumes/Time Maschine"
+
+# In dem Fall diskutil verwenden um die UUID zu bekommen:
+diskutil list | grep -i "time\|maschine"
+
+# 2: APFS Volume Time Maschine           2.9 TB     disk9s3
+
+```
