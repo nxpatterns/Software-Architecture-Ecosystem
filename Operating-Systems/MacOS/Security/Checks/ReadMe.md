@@ -13,6 +13,36 @@ sudo systemsetup -getremotelogin
 
 # Remote Desktop (ARD) – sollte "No options selected" zeigen
 sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -show
+
+# ARD komplett deaktivieren
+ ❯ sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -deactivate -stop
+Starting...
+Removed preference to start ARD after reboot.
+Done.
+
+# Und den LaunchDaemon direkt disablen
+ ❯ sudo launchctl disable system/com.apple.ARDAgent
+ ❯
+
+ ❯ sudo launchctl bootout system /System/Library/LaunchDaemons/com.apple.RemoteDesktop.PrivilegeProxy.plist 2>/dev/null
+ ❯
+
+ ❯ sudo launchctl bootout system /System/Library/LaunchAgents/com.apple.ARDAgent.plist 2>/dev/null
+ ❯
+
+# com.apple.remotemanagementd ist der eigentliche Verdächtige -- stopp ihn auch
+sudo launchctl bootout system /System/Library/LaunchDaemons/com.apple.remotemanagementd.plist 2>/dev/null
+sudo launchctl disable system/com.apple.remotemanagementd
+
+# Erneut prüfen
+ls /System/Library/LaunchDaemons/ | grep -i ard
+ls /System/Library/LaunchDaemons/ | grep -i remote
+ls /System/Library/LaunchAgents/ | grep -i ard
+
+# Nach Neustart erneut prüfen
+sudo lsof -i :3283
+launchctl list | grep -i ard
+ps aux | grep -i ARDAgent | grep -v grep
 ```
 
 ## 2. Screen Recording Permissions prüfen
