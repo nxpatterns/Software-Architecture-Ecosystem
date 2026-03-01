@@ -33,5 +33,5 @@ docker system df -v
 docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 
 # Im Container eine Datei löschen
-docker exec <container-name> sh -c 'rm /tmp/*.sql' # <- Wichtig, vergesse ich immer
+docker exec <container-name> sh -c 'rm /tmp/*.sql' # <- Wichtig, nicht vergessen!
 ```
