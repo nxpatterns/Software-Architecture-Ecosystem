@@ -48,7 +48,6 @@
 
 <!-- /code_chunk_output -->
 
-
 ## Offene Ports analysieren
 
 ### ARDAgent / Apple Remote Desktop (Port 3283)
@@ -196,6 +195,57 @@ ps aux | grep -i ARDAgent | grep -v grep
 
 # Gesamtbild nochmal
 sudo lsof -iTCP -sTCP:LISTEN | grep -v "127.0.0.1" | grep -v "localhost" | grep -v "::1"
+```
+
+## Eigene Firewall Regeln anlegen
+
+Manchmal braucht man bestimmte Programme auf dem System, welche aber unerwünschterweise von außen erreichbar sind (sie öffnen Ports für Telemetrie, Updates etc. und schicken und empfangen dauernd Daten). In so einem Fall, kann man das Programm zwar laufen lassen, aber den Zugriff von außen blockieren.
+
+Damit die Regel aktiv wird, brauchst du drei Dinge:
+
+1. Die Anchor-Datei (die du schon hast)
+2. Einen Eintrag in `/etc/pf.conf` der den Anchor lädt
+3. `pfctl` der die Konfiguration einliest
+
+Und damit das nach einem Neustart überlebt, noch einen LaunchDaemon.
+
+```bash
+# 1. Anchor-Datei erstellen, e.g. um Port 59869 zu blockieren
+echo "block in proto tcp from any to any port 59869" | sudo tee /etc/pf.anchors/local-block
+
+# 2. Anchor in /etc/pf.conf einbinden (ans Ende anfügen)
+echo 'anchor "local-block"' | sudo tee -a /etc/pf.conf
+echo 'load anchor "local-block" from "/etc/pf.anchors/local-block"' | sudo tee -a /etc/pf.conf
+
+# 3. pf aktivieren und Regeln laden
+sudo pfctl -e
+sudo pfctl -f /etc/pf.conf
+
+# 4. LaunchDaemon für Persistenz nach Neustart
+sudo tee /Library/LaunchDaemons/com.local.pf-local-block.plist > /dev/null << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.local.pf-local-block</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/sbin/pfctl</string>
+        <string>-f</string>
+        <string>/etc/pf.conf</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+EOF
+
+sudo launchctl load /Library/LaunchDaemons/com.local.pf-local-block.plist
+
+# Verifizieren, dass die Regel aktiv ist
+sudo pfctl -s rules | grep 59869  # das zeigt leider nichts, daher verwende:
+sudo pfctl -a "local-block" -s rules
 ```
 
 ## Remote-Dienste prüfen und deaktivieren
