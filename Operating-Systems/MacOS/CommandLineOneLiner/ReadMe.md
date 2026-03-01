@@ -47,6 +47,7 @@ After Deployment via SSH
 
 ```shell
 tail -f /home/LogFiles/application.log # <- replace with your log file
+tail -f -n 10 /home/LogFiles/application.log # last 10 lines + follow
 ```
 
 ### Sort
