@@ -203,7 +203,7 @@ Manchmal braucht man bestimmte Programme auf dem System, welche aber unerwünsch
 
 Damit die Regel aktiv wird, brauchst du drei Dinge:
 
-1. Die Anchor-Datei (die du schon hast)
+1. Die Anchor-Datei mit den Firewall-Regeln
 2. Einen Eintrag in `/etc/pf.conf` der den Anchor lädt
 3. `pfctl` der die Konfiguration einliest
 
