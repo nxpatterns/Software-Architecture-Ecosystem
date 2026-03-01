@@ -34,4 +34,11 @@ docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
 
 # Im Container eine Datei löschen
 docker exec <container-name> sh -c 'rm /tmp/*.sql' # <- Wichtig, nicht vergessen!
+
+# Logs der letzten 30 Minuten anzeigen
+docker logs --since 30m mailserver
+
+# Oder im Follow-Modus:
+docker logs --since 30m -f mailserver
+# 15m, 1h, 2h usw.
 ```
