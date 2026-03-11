@@ -1,5 +1,34 @@
 # Jupyter Notebooks
 
+## Environment Variables
+
+```python
+import os
+
+# Safe method (returns None if not exists)
+value = os.environ.get('MY_VAR')
+
+# Direct access (raises KeyError if not exists)
+value = os.environ['MY_VAR']
+
+# With default value
+value = os.environ.get('MY_VAR', 'default_value')
+```
+
+**Important:** The env variable must be set BEFORE starting the Jupyter server. Variables set in the shell after Jupyter is running won't be visible.
+
+To verify:
+
+```python
+print(os.environ.get('MY_VAR'))
+```
+
+If you need to set it dynamically within the notebook:
+
+```python
+os.environ['MY_VAR'] = 'value'
+```
+
 ## JSON
 
 ### Load JSON
