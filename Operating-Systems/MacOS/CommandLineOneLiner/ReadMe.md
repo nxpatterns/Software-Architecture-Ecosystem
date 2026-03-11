@@ -1,5 +1,7 @@
 # CommandLine OneLiner
 
+See also in [CommandLine](../Common/CommandLine/ReadMe.md) for general one-liners.
+
 ## Clear all app-to-space assignments
 
 ```bash
