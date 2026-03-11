@@ -13,6 +13,14 @@
     - [Usage Steps](#usage-steps)
     - [Critical Considerations](#critical-considerations)
     - [When This Approach Fails](#when-this-approach-fails)
+- [Finding Unescaped Single Quotes in SQL String Literals](#finding-unescaped-single-quotes-in-sql-string-literals)
+  - [Problem](#problem)
+  - [VSCode Regex Pattern](#vscode-regex-pattern)
+  - [How It Works](#how-it-works-1)
+  - [Matches](#matches)
+  - [Doesn't Match](#doesnt-match)
+  - [Common Pitfalls](#common-pitfalls)
+  - [Replacement](#replacement)
 
 <!-- /code_chunk_output -->
 
@@ -107,3 +115,80 @@ Use a script (Python, etc.) instead if:
 - The pattern varies too much for a single regex
 
 Regex shines for mechanical, pattern-based transformations. Complex logic requires code.
+
+## Finding Unescaped Single Quotes in SQL String Literals
+
+### Problem
+
+SQL string literals use single quotes as delimiters (`'text'`). When a single quote appears inside the string, it must be escaped by doubling it (`'can''t'`).
+
+Unescaped quotes cause syntax errors:
+
+- ✗ `'Bäck's'` - breaks SQL
+- ✓ `'Bäck''s'` - valid SQL
+
+**Goal:** Find strings with unescaped single quotes for bulk fixing.
+
+### VSCode Regex Pattern
+
+```regex
+'(?:[^']|'')*(?<!')'(?!')(?:[^']|'')*'
+```
+
+**Usage:**
+
+1. Open Find & Replace (Ctrl+H / Cmd+H)
+2. Enable regex mode (.*)
+3. Paste pattern above
+
+### How It Works
+
+```plaintext
+'                    Start delimiter
+(?:[^']|'')*         Zero or more: (non-quote char) OR (escaped '')
+(?<!')'(?!')         Single quote that's NOT part of ''
+(?:[^']|'')*         Zero or more: (non-quote char) OR (escaped '')
+'                    End delimiter
+```
+
+**Key insight:** `(?:[^']|'')*` allows any character except quotes, but permits escaped `''` sequences.
+
+**Lookarounds:** `(?<!')'(?!')` ensures the middle quote isn't part of an escaped pair.
+
+### Matches
+
+- `'Bäck's'` - unescaped quote
+- `'D'r Rechenmacher, Familie Schoch'` - unescaped quote (comma inside is fine)
+- `'can't handle'` - unescaped quote
+
+### Doesn't Match
+
+- `'Faily''s Shisha Lounge'` - already escaped
+- `'normal string'` - no embedded quotes
+- `'Person', NULL, 'Office'` - separate strings (comma-delimited)
+
+### Common Pitfalls
+
+**Mistake 1:** Using `'[^']*'[^']*'`
+
+- Breaks across comma boundaries
+- Matches `'text', NULL, 'other'` incorrectly
+
+**Mistake 2:** Using `'[^',]*'[^',]*'`
+
+- Excludes commas from strings
+- Misses `'D'r Text, More'` cases
+
+**Mistake 3:** Forgetting lookarounds
+
+- Matches already-escaped `''` sequences
+- Creates false positives
+
+### Replacement
+
+Once found, replace `'` with `''` inside the string:
+
+1. Manual review recommended (automated replacement is tricky)
+2. Or use parameterized queries to avoid escaping altogether
+
+The pattern assumes standard SQL escaping (`''`). Some systems use backslash escaping (`\'`) - adjust accordingly.
