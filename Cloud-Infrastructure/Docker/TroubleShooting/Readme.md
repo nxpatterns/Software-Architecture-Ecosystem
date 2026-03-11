@@ -1,5 +1,24 @@
 # Trouble Shooting
 
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=5 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Running PostGIS on Apple Silicon (ARM64)](#running-postgis-on-apple-silicon-arm64)
+  - [Problem](#problem)
+  - [Solution: Force AMD64 via Rosetta Emulation](#solution-force-amd64-via-rosetta-emulation)
+  - [Trade-offs](#trade-offs)
+  - [Notes](#notes)
+- [Docker CP and Glob Patterns](#docker-cp-and-glob-patterns)
+  - [Problem](#problem-1)
+  - [Solutions](#solutions)
+    - [Loop over files](#loop-over-files)
+    - [Copy entire directory](#copy-entire-directory)
+    - [Use tar pipeline](#use-tar-pipeline)
+  - [Why This Happens](#why-this-happens)
+
+<!-- /code_chunk_output -->
+
 ## Running PostGIS on Apple Silicon (ARM64)
 
 ### Problem
@@ -47,3 +66,44 @@ services:
 ```
 
 - This issue affects any image that only publishes `linux/amd64` manifests, not just PostGIS.
+
+## Docker CP and Glob Patterns
+
+### Problem
+
+When using `docker cp` to copy files into a container, shell glob patterns (e.g., `*.sql`) are expanded by the shell before the command runs. This can lead to errors if the pattern matches multiple files, as `docker cp` only accepts one source argument.
+
+```bash
+# This fails if phase5*.sql matches 3 files:
+docker cp excel3/sql/phase5*.sql container:/tmp/
+# Expands to: docker cp file1.sql file2.sql file3.sql container:/tmp/
+# Result: 4 arguments → error
+```
+
+### Solutions
+
+#### Loop over files
+
+```bash
+for f in path/to/files/*.sql; do
+  docker cp "$f" container:/tmp/
+done
+```
+
+#### Copy entire directory
+
+```bash
+# Copies all contents of sql/ into /tmp/
+docker cp path/to/sql/. container:/tmp/
+```
+
+#### Use tar pipeline
+
+```bash
+# Streams multiple files through stdin
+tar -c path/to/files/*.sql | docker exec -i container tar -xC /tmp/
+```
+
+### Why This Happens
+
+The shell expands globs before executing the command. `docker cp` sees the expanded list, not the pattern. Unlike tools built for multiple sources (like `cp` or `mv`), `docker cp` only handles one source at a time.
