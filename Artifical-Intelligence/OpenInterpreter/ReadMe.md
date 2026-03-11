@@ -1,8 +1,4 @@
-# Open Source AI Tools
-
-##
-
-## Interpreter
+# Open Interpreter
 
 Downloads models here: `/Users/<user-name>/Library/Application Support/`
 
