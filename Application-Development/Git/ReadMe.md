@@ -1,5 +1,93 @@
 # Git
 
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [First Steps](#first-steps)
+- [.gitignore (CACHED vs. UNTRACKED, Mostly .nx Issues)](#gitignore-cached-vs-untracked-mostly-nx-issues)
+  - [Remove ignored files from remote repository](#remove-ignored-files-from-remote-repository)
+- [Undo add](#undo-add)
+- [Stop ignoring cases, just be insensitive](#stop-ignoring-cases-just-be-insensitive)
+- [Show Number of Commits](#show-number-of-commits)
+- [Rebase (Merging Commits)](#rebase-merging-commits)
+- [Show just the current branch](#show-just-the-current-branch)
+- [Git Pull and reset/ignore local changes](#git-pull-and-resetignore-local-changes)
+- [Git Show Remote Git Repository Url](#git-show-remote-git-repository-url)
+- [List local and upstream branches](#list-local-and-upstream-branches)
+- [Prune Remote Branches](#prune-remote-branches)
+- [Sort remote branched by up-to-dateness (committer date)](#sort-remote-branched-by-up-to-dateness-committer-date)
+- [Git Cherry Pick](#git-cherry-pick)
+- [Git Diff](#git-diff)
+- [Find/Search git log for any mention of .avif in diffs:](#findsearch-git-log-for-any-mention-of-avif-in-diffs)
+  - [Scope it to specific file types:](#scope-it-to-specific-file-types)
+  - [See the actual diff for those commits:](#see-the-actual-diff-for-those-commits)
+- [Find Aliases](#find-aliases)
+- [Checkout a single file from another branch](#checkout-a-single-file-from-another-branch)
+- [Update Index](#update-index)
+- [Git Alias](#git-alias)
+- [Show Configration Paths](#show-configration-paths)
+- [Log only current branch](#log-only-current-branch)
+- [Log pretty only commit hashes and titles and save in a file](#log-pretty-only-commit-hashes-and-titles-and-save-in-a-file)
+- [Log all modified changes by a certain user](#log-all-modified-changes-by-a-certain-user)
+  - [Short version](#short-version)
+  - [Long Version](#long-version)
+- [Git Search Strings in Code](#git-search-strings-in-code)
+- [Restore deleted file](#restore-deleted-file)
+- [Create and connect to remote repository](#create-and-connect-to-remote-repository)
+  - [Remote add & pull](#remote-add--pull)
+  - [Set-upstream & push](#set-upstream--push)
+  - [fatal: refusing to merge unrelated histories](#fatal-refusing-to-merge-unrelated-histories)
+- [Git remove remote config](#git-remove-remote-config)
+- [Set autocrlf to false](#set-autocrlf-to-false)
+- [Store Git Credentials on Mac in Key permanently](#store-git-credentials-on-mac-in-key-permanently)
+- [Set MacOs KeyChain as Git credential store](#set-macos-keychain-as-git-credential-store)
+- [Rename local and remote branch](#rename-local-and-remote-branch)
+- [Delete local branch](#delete-local-branch)
+- [Delete remote branch](#delete-remote-branch)
+- [stash](#stash)
+- [tag](#tag)
+- [Correct last commit](#correct-last-commit)
+- [Status](#status)
+- [Reset/Revert/Checkout/..](#resetrevertcheckout)
+- [Log (and relevant config settings)](#log-and-relevant-config-settings)
+- [Blame](#blame)
+- [Check Integrity](#check-integrity)
+- [Create Branch from Commit Hash](#create-branch-from-commit-hash)
+- [Merge](#merge)
+  - [Merge without checkout](#merge-without-checkout)
+  - [Try merge to see if everything ok, do not commit, do not merge yet:](#try-merge-to-see-if-everything-ok-do-not-commit-do-not-merge-yet)
+  - [Test merge without merge with git alias](#test-merge-without-merge-with-git-alias)
+  - [Merge: Abort if conflicts (1)](#merge-abort-if-conflicts-1)
+  - [Merge: Abort if conflicts (2)](#merge-abort-if-conflicts-2)
+  - [Make a branch master or replace/overwrite master with an old branch](#make-a-branch-master-or-replaceoverwrite-master-with-an-old-branch)
+- [Statistics](#statistics)
+- [Rebase (Merging Commits)](#rebase-merging-commits-1)
+  - [Interactive](#interactive)
+- [Bisect](#bisect)
+- [Miscellaneous](#miscellaneous)
+- [Show files added in the last commit](#show-files-added-in-the-last-commit)
+- [Show files added in the last N commits](#show-files-added-in-the-last-n-commits)
+- [Show files with commit context](#show-files-with-commit-context)
+- [Show files grouped by commit with status](#show-files-grouped-by-commit-with-status)
+  - [Common diff-filter options](#common-diff-filter-options)
+  - [Notes](#notes)
+- [ERRORS & SOLUTIONS](#errors--solutions)
+  - [Trying to push (New Repository) without any commits](#trying-to-push-new-repository-without-any-commits)
+    - [Solution: Make a break, you're tired :)](#solution-make-a-break-youre-tired-)
+  - [⚠ lint-staged prevented an empty git commit.](#-lint-staged-prevented-an-empty-git-commit)
+    - [Reason](#reason)
+    - [Solution](#solution)
+  - [Your configuration specifies to merge with the <branch name> from the remote, but no such ref was fetched](#your-configuration-specifies-to-merge-with-the-branch-name-from-the-remote-but-no-such-ref-was-fetched)
+  - [Git autocomplete on Windows Visual Studio Code integrated Terminal (VSCode/Cygwin/Git/Autocomplete)](#git-autocomplete-on-windows-visual-studio-code-integrated-terminal-vscodecygwingitautocomplete)
+    - [Install Cygwin and following cygwin packages](#install-cygwin-and-following-cygwin-packages)
+    - [Add VSCode Settings](#add-vscode-settings)
+    - [Copy `.git-completion.bash` into your Cygwin Home](#copy-git-completionbash-into-your-cygwin-home)
+    - [Edit your `.bash_profile` in your cygwin home folder and add](#edit-your-bash_profile-in-your-cygwin-home-folder-and-add)
+  - [Git-TFS-Error: RPC failed; HTTP 501 curl 22 The requested URL returned error: 501 Not Implemented](#git-tfs-error-rpc-failed-http-501-curl-22-the-requested-url-returned-error-501-not-implemented)
+
+<!-- /code_chunk_output -->
+
 ## First Steps
 
     git config --global --edit // OR The following below
@@ -151,7 +239,9 @@ This shows you exactly which line was added/removed and in which file.
 
 Quick tip: if `-S` returns nothing, try `-G '.avif'` instead. `-G` uses regex and matches any diff line containing the pattern, while `-S` counts occurrences. If someone replaced one `.avif` reference with another in the same commit, `-S` would miss it but `-G` would catch it.
 
-## Find
+## Find Aliases
+
+Might be not up-to-date, see also `.../Git/History/ReadMe.md`.
 
 ```shell
 git-find-file() {
@@ -490,6 +580,84 @@ git log --summary -M90% | grep -e "^ rename"
 git log --follow a-modified-file.txt
 git config diff.renames true  // Rename Detection = true
 ```
+
+## Show files added in the last commit
+
+```bash
+git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD
+```
+
+**Flags:**
+
+- `--diff-filter=A` - Only show Added files (exclude modified, deleted, renamed)
+- `-r` - Recurse into subdirectories
+- `--no-commit-id` - Suppress commit hash in output
+- `--name-only` - Show only filenames, not file modes or status letters
+
+## Show files added in the last N commits
+
+```bash
+# Last 5 commits
+git diff-tree --no-commit-id --name-only --diff-filter=A -r HEAD~4..HEAD
+```
+
+The range `HEAD~4..HEAD` means "from 4 commits ago through HEAD" (5 commits total).
+
+**General formula:** For N commits, use `HEAD~(N-1)..HEAD`
+
+## Show files with commit context
+
+If you want to see which commit added each file:
+
+```bash
+git log -5 --name-only --diff-filter=A --pretty=format:"%h %s"
+```
+
+**Output format:**
+
+```plaintext
+abc1234 Add user authentication
+src/auth.js
+src/middleware/auth.js
+
+def5678 Create database schema
+db/schema.sql
+```
+
+## Show files grouped by commit with status
+
+```bash
+git log -5 --name-status --diff-filter=A --pretty=format:"%C(yellow)%h%Creset - %s"
+```
+
+**Output format:**
+
+```plaintext
+abc1234 - Add user authentication
+A       src/auth.js
+A       src/middleware/auth.js
+
+def5678 - Create database schema
+A       db/schema.sql
+```
+
+The `A` prefix explicitly marks files as "Added".
+
+### Common diff-filter options
+
+- `A` - Added files
+- `M` - Modified files
+- `D` - Deleted files
+- `R` - Renamed files
+- `C` - Copied files
+
+Combine multiple filters: `--diff-filter=AM` shows added and modified files.
+
+### Notes
+
+- These commands only show files that were added (not modified versions of existing files).
+- Empty commits or commits with only modifications/deletions will show no output.
+- For merge commits, use `--first-parent` to avoid seeing files from merged branches.
 
 ## ERRORS & SOLUTIONS
 
