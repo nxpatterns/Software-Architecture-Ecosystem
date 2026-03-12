@@ -1,16 +1,27 @@
-# Traefik Cookbook
+# Secure Traefik Dashboard
 
-## Restricting Access to the Traefik Dashboard
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=5 orderedList=false} -->
 
-### Problem
+<!-- code_chunk_output -->
+
+- [Problem](#problem)
+- [Solution: IP Restriction at the Firewall Level](#solution-ip-restriction-at-the-firewall-level)
+  - [Using iptables (no ufw)](#using-iptables-no-ufw)
+    - [Using Traefik Middleware (label-based, Docker)](#using-traefik-middleware-label-based-docker)
+- [Considerations](#considerations)
+  - [Why Basic Auth Has No Logout](#why-basic-auth-has-no-logout)
+
+<!-- /code_chunk_output -->
+
+## Problem
 
 The Traefik dashboard exposes an admin UI on a dedicated port. Basic Auth alone is a weak protection: there is no logout mechanism, and browser credential caches can persist across sessions.
 
-### Solution: IP Restriction at the Firewall Level
+## Solution: IP Restriction at the Firewall Level
 
 Block the dashboard port for everyone except a trusted IP address. This is more robust than application-level middleware because traffic is dropped before it reaches the process.
 
-#### Using iptables (no ufw)
+### Using iptables (no ufw)
 
 ```bash
 # Allow access from your trusted IP
@@ -54,7 +65,7 @@ labels:
 
 Note: In Traefik v3 the middleware key is `ipallowlist` (not `ipwhitelist` as in v2).
 
-### Considerations
+## Considerations
 
 **Dynamic IPs:** If your ISP does not assign a static IP, the rule will lock you out after an IP change. Options: use a VPN with a fixed egress IP, or combine IP restriction with Basic Auth as a fallback.
 
