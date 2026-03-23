@@ -2,6 +2,24 @@
 
 > Diagnosed on macOS Tahoe 26.3.1 with Docker Desktop 4.22.1 → 4.65.0
 
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=5 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [Q: Docker Desktop does not start after login. Nothing happens when I click the icon. What is going on?](#q-docker-desktop-does-not-start-after-login-nothing-happens-when-i-click-the-icon-what-is-going-on)
+- [Q: Why does it work after a full reboot but not after a simple re-launch?](#q-why-does-it-work-after-a-full-reboot-but-not-after-a-simple-re-launch)
+- [Q: How do I confirm this is the actual problem?](#q-how-do-i-confirm-this-is-the-actual-problem)
+- [Q: How do I check if my Privileged Helper Tools are outdated?](#q-how-do-i-check-if-my-privileged-helper-tools-are-outdated)
+- [Q: What is the fix?](#q-what-is-the-fix)
+- [Q: After updating, Docker shows an "Integrity issue detected" warning about broken symlinks. Is this a problem?](#q-after-updating-docker-shows-an-integrity-issue-detected-warning-about-broken-symlinks-is-this-a-problem)
+- [Q: How do I make Docker Desktop quit completely when I close it, with no background processes?](#q-how-do-i-make-docker-desktop-quit-completely-when-i-close-it-with-no-background-processes)
+- [Q: Where are the relevant log files for future debugging?](#q-where-are-the-relevant-log-files-for-future-debugging)
+- [Q: Can I fix it without updating, just by reinstalling the helpers manually?](#q-can-i-fix-it-without-updating-just-by-reinstalling-the-helpers-manually)
+- [Summary of root cause](#summary-of-root-cause)
+
+<!-- /code_chunk_output -->
+
+
 ## Q: Docker Desktop does not start after login. Nothing happens when I click the icon. What is going on?
 
 The most likely cause is a mismatch between the Docker Desktop app and its **Privileged Helper Tools** (`com.docker.vmnetd`, `com.docker.socket`). These helpers are installed system-wide and do not update automatically when you manually install a newer version of Docker Desktop.
