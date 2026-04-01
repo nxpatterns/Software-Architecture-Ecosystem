@@ -1,0 +1,29 @@
+llm:
+  model: "claude-sonnet-4-20250514"
+  temperature: 0
+  context_window: 200000  # Maximal für Cache-Reads
+  max_tokens: 16000  # Unter dem 32k Output-Limit bleiben
+  max_output: 16000  # Entsprechend anpassen 
+  multi_line: true # If True, you can input multiple lines starting and ending with ```
+  disable_telemetry: true
+
+# # Computer Settings
+computer:
+  import_computer_api: true # Gives OI a helpful Computer API designed for code interpreting language models
+#   emit_images: True
+#   verbose: True
+
+custom_instructions: >
+  Always respond in English, regardless of the query language.
+
+# General Configuration
+os: true 
+auto_run: false # If True, code will run without asking for confirmation
+safe_mode: "ask" # The safety mode for the LLM â€” one of "off", "ask", "auto"
+# offline: False  # If True, will disable some online features like checking for updates
+# verbose: True # If True, will print detailed logs
+multi_line: true # If True, you can input multiple lines starting and ending with ```
+disable_telemetry: true
+
+# Documentation
+# All options: https://docs.openinterpreter.com/settings
