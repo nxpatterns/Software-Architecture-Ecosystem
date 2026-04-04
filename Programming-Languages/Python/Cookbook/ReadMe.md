@@ -168,3 +168,12 @@ img = qr.make_image()
 # img.save("image.jpeg")
 img.save("qr_code.png")
 ```
+
+## Find Installation Path of a Certain Package
+
+```python
+# e.g. for open-interpreter
+python -c "import interpreter; print(interpreter.__file__)"
+python -c "import interpreter, os; print(os.path.dirname(interpreter.__file__))"
+pip show open-interpreter
+```
