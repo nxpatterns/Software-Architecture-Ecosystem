@@ -53,7 +53,7 @@ Falls das Problem trotzdem bestehen bleibt, wäre der nächste Schritt `depcruis
 
 ```bash
 
-# Single file Output Dot
+# Single file Output Dot (you need to install graphviz  and VSCode Extension to visualize the output.)
 npx depcruise apps/cloudlib-fe/src/app/admin/services/photo-tours.service.ts --output-type dot > docs/__dependecy-graphs/photo-tours.service.dot
 
 # Single file Output SVG
@@ -61,6 +61,16 @@ npx depcruise apps/cloudlib-fe/src/app/admin/services/photo-tours.service.ts --o
 
 # Single file Output JSON
 npx depcruise apps/cloudlib-fe/src/app/admin/services/photo-tours.service.ts --output-type json > docs/__dependecy-graphs/photo-tours.service.json
+
+# archi -> kollabieret auf Ordner-Ebene und zeigt die Architektur statt einzelner Dateien.
+npx depcruise apps/cloudlib-be/src \
+  --output-type archi \
+  | dot -T svg > docs/__dependecy-graphs/be-architecture.svg
+
+npx depcruise apps/cloudlib-be/src/routed/companies \
+  --output-type dot --exclude 'node_modules|\.spec\.' \
+  | dot -T svg > docs/__dependecy-graphs/be-companies.svg
+
 
 # Show dependencies of all files in the admin panel and the services they depend on
 # Format: ".dot". You need to install graphviz  and VSCode Extension to visualize the output.
