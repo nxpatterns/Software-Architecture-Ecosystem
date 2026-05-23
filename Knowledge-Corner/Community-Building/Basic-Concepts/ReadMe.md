@@ -1,4 +1,4 @@
-# 7D Community Building — Deine Checkliste
+# Checkliste: Community Building Software
 
 **Für:** Dich, den Auftraggeber.
 **Von:** Deinem Entwickler.
