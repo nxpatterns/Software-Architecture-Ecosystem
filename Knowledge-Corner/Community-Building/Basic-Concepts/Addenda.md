@@ -1,6 +1,4 @@
-# Addenda
-
-# 7D Community Building — Ergänzungen zur Checkliste
+# Ergänzungen zur Checkliste
 
 **Was das ist:** Drei Anhänge zum Hauptdokument. Du kannst sie unabhängig lesen, in beliebiger Reihenfolge.
 
