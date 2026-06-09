@@ -5,6 +5,19 @@ Bookmarks/**/*
 .DS_Store
 ./.DS_Store/
 
+Artifical-Intelligence/AgenticEngineering/Examples
+Artifical-Intelligence/Anthropic/Mythos/
+Artifical-Intelligence/APIs
+Artifical-Intelligence/Hermes/Container/
+Artifical-Intelligence/Loops/Examples
+Artifical-Intelligence/Loops/Plattform
+Artifical-Intelligence/Loops/StateMachines
+Artifical-Intelligence/OpenClaw/TroubleShooting/
+Artifical-Intelligence/Papers
+Artifical-Intelligence/SKILLS
+Cloud-Infrastructure/Hetzner/CloudLibrary/CloudLib.EU
 Cloud-Infrastructure/Hetzner/Debian/Examples
+Cloud-Infrastructure/Hetzner/MailServer/
+Cloud-Infrastructure/Hetzner/NewsletterServer/
 
 Operating-Systems/MacOS/Security/__SORT__NOT_DEPLOY_YET
