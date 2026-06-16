@@ -8,7 +8,7 @@
 - **Define the task:** Be specific about what you want.
 - **Add constraints:** Set clear limits and boundaries.
 - **Provide context:** Share background, audience & restrictions.
-- **Temporary chats:** Use ChatGPT without its memory of you.
+- **Temporary chats:** Use without its memory of you.
 - **Define output format:** Bullets, tables, or any structure.
 - **T****ool policy:** Turn web browsing on or off.
 - **Share examples of quality outputs:** Set the standard.
