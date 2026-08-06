@@ -23,14 +23,14 @@ Customer portal, internal tool, commerce site, admin console — same cryptograp
 
 | API / Concept | Job | Reference |
 |---|---|---|
-| `navigator.credentials.create()` | Registers a public-key credential against a server challenge | — |
-| `navigator.credentials.get()` | Asks an authenticator to sign a server challenge at sign-in | — |
-| `PublicKeyCredential` | The WebAuthn credential type and its capability checks | — |
-| Platform authenticators | Face ID, Touch ID, Android screen lock, Windows Hello | — |
-| Discoverable credentials | Passkeys an authenticator can offer before the site even knows who's asking | — |
+| `navigator.credentials.create()` | Registers a public-key credential against a server challenge | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/create) |
+| `navigator.credentials.get()` | Asks an authenticator to sign a server challenge at sign-in | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CredentialsContainer/get) |
+| `PublicKeyCredential` | The WebAuthn credential type and its capability checks | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential) |
+| Platform authenticators | Face ID, Touch ID, Android screen lock, Windows Hello | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#authenticators) |
+| Discoverable credentials | Passkeys an authenticator can offer before the site even knows who's asking | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API#discoverable_credentials_and_conditional_mediation) |
 | Conditional mediation | `get({ mediation: "conditional" })` offers a passkey right from the autofill surface | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API) |
-| `autocomplete="username webauthn"` | Marks the field eligible for that conditional suggestion | — |
-| Server-side verification, storage, sessions, recovery | The parts JavaScript cannot wish into existence, ever | — |
+| `autocomplete="username webauthn"` | Marks the field eligible for that conditional suggestion | [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/autocomplete#webauthn) |
+| Server-side verification, storage, sessions, recovery | The parts JavaScript cannot wish into existence, ever | [W3C WebAuthn](https://www.w3.org/TR/webauthn-2/) |
 
 ## The Browser Reality Check
 

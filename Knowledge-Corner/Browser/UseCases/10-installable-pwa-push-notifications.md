@@ -27,7 +27,7 @@ Task reminder, delivery update, price alert — same pattern: a web app needs to
 | Notifications API | Permission request and the actual system notification — earned, never sprayed on load | MDN |
 | VAPID keys | Identify the app server to the push service via signed tokens | [RFC 8292](https://datatracker.ietf.org/doc/html/rfc8292) |
 | Application server | Stores subscriptions, sends encrypted Web Push — the part people try to skip | [Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers) |
-| Cache Storage API | App shell caching so a launched install has something to render while reconnecting | — |
+| Cache Storage API | App shell caching so a launched install has something to render while reconnecting | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage) |
 
 ## The Browser Reality Check
 

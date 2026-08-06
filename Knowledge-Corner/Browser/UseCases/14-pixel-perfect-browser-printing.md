@@ -23,15 +23,15 @@ Dispatch ticket, tax invoice, packing slip, barcode label — same rendering pro
 
 | API | Job | Reference |
 |---|---|---|
-| `@media print` | Print-only styling, separate from the screen story | — |
-| `@page` | Page size, orientation, printable margins | — |
-| `break-before`/`break-after`/`break-inside` | Pagination control without teaching every `div` to be a sheet of paper | — |
+| `@media print` | Print-only styling, separate from the screen story | [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@media#examples) |
+| `@page` | Page size, orientation, printable margins | [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/@page) |
+| `break-before`/`break-after`/`break-inside` | Pagination control without teaching every `div` to be a sheet of paper | [break-before (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/break-before), [break-after (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/break-after), [break-inside (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/break-inside) |
 | `page-break-*` (legacy) | Fallback aliases — `break-*` is the preferred modern API | [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/page-break-after) |
-| `window.print()` | Invokes the user-agent print flow, only after full render | — |
-| `beforeprint`/`afterprint` | Prepare and restore transient print-only UI | — |
-| `@font-face` + `document.fonts.ready` | Load exact font files before any layout-sensitive output | — |
-| Canvas/SVG (optional) | Deterministic barcode, QR, label art | — |
-| Client-side PDF library (optional) | Alternative when users need a downloadable file, not a printer dialog | — |
+| `window.print()` | Invokes the user-agent print flow, only after full render | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/print) |
+| `beforeprint`/`afterprint` | Prepare and restore transient print-only UI | [beforeprint (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeprint_event), [afterprint (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/afterprint_event) |
+| `@font-face` + `document.fonts.ready` | Load exact font files before any layout-sensitive output | [@font-face (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face), [FontFaceSet.ready (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/FontFaceSet/ready) |
+| Canvas/SVG (optional) | Deterministic barcode, QR, label art | [Canvas API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API), [SVG (MDN)](https://developer.mozilla.org/en-US/docs/Web/SVG) |
+| Client-side PDF library (optional) | Alternative when users need a downloadable file, not a printer dialog | [jsPDF](https://github.com/parallax/jsPDF) |
 
 ## The Browser Reality Check
 
@@ -67,6 +67,7 @@ Paper is an integration environment. It has drivers, and drivers have opinions.
   .ticket-record { break-after: page; }
 }
 ```
+
 ```javascript
 document.fonts.ready.then(() => {
   printButton.disabled = false; // never print before the exact font metrics are loaded

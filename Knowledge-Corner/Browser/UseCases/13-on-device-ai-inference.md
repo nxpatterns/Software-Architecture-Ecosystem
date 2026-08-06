@@ -26,13 +26,13 @@ Image classification, semantic search, OCR post-processing, a small language mod
 |---|---|---|
 | WebGPU | GPU compute fast path on supported devices | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) |
 | WebNN (where available) | Hardware-accelerated neural-network graphs across CPU/GPU/NPU | [ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html) |
-| WebAssembly / WASM SIMD | Portable CPU execution path — the one that actually reaches everyone | — |
+| WebAssembly / WASM SIMD | Portable CPU execution path — the one that actually reaches everyone | [WebAssembly (MDN)](https://developer.mozilla.org/en-US/docs/WebAssembly), [SIMD (MDN)](https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/SIMD) |
 | ONNX Runtime Web / transformers.js | Model runtime and execution-provider layer, instead of hand-writing kernels on a Tuesday afternoon | [Transformers.js](https://huggingface.co/docs/transformers.js/en/index) |
-| Web Workers | Model init, preprocessing, inference — off the UI thread, always | — |
-| OffscreenCanvas (optional) | Resize/normalize image input inside a Worker | — |
-| Cache Storage / IndexedDB | Model files, tokenizer assets, an explicit version manifest | — |
-| Web Crypto | Verify a pinned model digest before trusting it | — |
-| Cross-Origin Isolation (optional) | Unlocks `SharedArrayBuffer` for threaded WASM runtimes | — |
+| Web Workers | Model init, preprocessing, inference — off the UI thread, always | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) |
+| OffscreenCanvas (optional) | Resize/normalize image input inside a Worker | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas) |
+| Cache Storage / IndexedDB | Model files, tokenizer assets, an explicit version manifest | [CacheStorage (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage), [IndexedDB (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
+| Web Crypto | Verify a pinned model digest before trusting it | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) |
+| Cross-Origin Isolation (optional) | Unlocks `SharedArrayBuffer` for threaded WASM runtimes | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/crossOriginIsolated) |
 
 ## The Browser Reality Check
 

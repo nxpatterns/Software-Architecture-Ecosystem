@@ -27,9 +27,9 @@ Product viewer, dashboard parallax, museum guide, game control — same input pr
 | `DeviceMotionEvent` | Acceleration and rotation-rate for shake/impulse effects | MDN |
 | `DeviceOrientationEvent.requestPermission()` | The iOS-only, user-gesture-gated consent path | MDN |
 | Secure context (HTTPS) | Required by every browser that supports these APIs | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/DeviceOrientationEvent) |
-| `requestAnimationFrame()` | Apply the latest sample once per frame, not per sensor callback | — |
-| CSS `transform`/`perspective` | Compositor-friendly rendering of the result | — |
-| Pointer/touch events | The unglamorous, always-works baseline | — |
+| `requestAnimationFrame()` | Apply the latest sample once per frame, not per sensor callback | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) |
+| CSS `transform`/`perspective` | Compositor-friendly rendering of the result | [transform (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/transform), [perspective (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/perspective) |
+| Pointer/touch events | The unglamorous, always-works baseline | [Pointer events (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events), [Touch events (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Touch_events) |
 
 ## The Browser Reality Check
 

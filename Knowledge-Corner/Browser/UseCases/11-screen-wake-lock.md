@@ -23,11 +23,11 @@ Cooking flow, exercise interval, lab procedure, inspection checklist — same co
 
 | API | Job | Reference |
 |---|---|---|
-| `navigator.wakeLock.request('screen')` | Asks the OS not to dim or lock while the document is visible | — |
-| `WakeLockSentinel` | Holds the granted lock, fires `release` when it's taken back | — |
-| Page Visibility API | Stops acquisition while hidden, reliable reacquire signal on return | — |
+| `navigator.wakeLock.request('screen')` | Asks the OS not to dim or lock while the document is visible | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WakeLock/request) |
+| `WakeLockSentinel` | Holds the granted lock, fires `release` when it's taken back | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WakeLockSentinel) |
+| Page Visibility API | Stops acquisition while hidden, reliable reacquire signal on return | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) |
 | `Permissions-Policy: screen-wake-lock` | Allows or blocks the API, especially when framed | [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/screen-wake-lock) |
-| Silent media (last resort) | Old-school fallback trick — media playback, not an actual wake-lock contract | — |
+| Silent media (last resort) | Old-school fallback trick — media playback, not an actual wake-lock contract | [MDN Autoplay guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay) |
 
 ## The Browser Reality Check
 

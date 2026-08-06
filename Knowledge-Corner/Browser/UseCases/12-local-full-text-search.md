@@ -24,13 +24,13 @@ Personal notes, product catalogs, diagnostic logs, an offline reference library 
 
 | API | Job | Reference |
 |---|---|---|
-| IndexedDB | Durable, transactional storage for documents and index segments | — |
-| Origin Private File System (OPFS) | Origin-scoped private file storage for larger database files | — |
+| IndexedDB | Durable, transactional storage for documents and index segments | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
+| Origin Private File System (OPFS) | Origin-scoped private file storage for larger database files | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system) |
 | `FileSystemSyncAccessHandle` | Synchronous OPFS I/O inside a Dedicated Worker — SQLite's natural fit | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle) |
-| Web Workers | Isolate tokenization, indexing, ranking, WASM from the UI thread | — |
-| WebAssembly | A compiled search engine or SQLite+FTS instead of reinventing a database in JS out of optimism | — |
-| `StorageManager` | `estimate()`, `persist()`, and handling the quota failure that eventually arrives | — |
-| BroadcastChannel / Web Locks | Coordinate imports and a single writer across tabs | — |
+| Web Workers | Isolate tokenization, indexing, ranking, WASM from the UI thread | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) |
+| WebAssembly | A compiled search engine or SQLite+FTS instead of reinventing a database in JS out of optimism | [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly) |
+| `StorageManager` | `estimate()`, `persist()`, and handling the quota failure that eventually arrives | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager) |
+| BroadcastChannel / Web Locks | Coordinate imports and a single writer across tabs | [BroadcastChannel (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel), [Web Locks API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API) |
 
 ## The Browser Reality Check
 

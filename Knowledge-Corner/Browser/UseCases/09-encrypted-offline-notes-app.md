@@ -28,7 +28,7 @@ Meeting notes, a field journal, a private checklist — same pattern: useful loc
 | IndexedDB | Encrypted note records, IVs, schema version, origin-scoped | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
 | Structured clone | The mechanism IndexedDB uses to persist a `CryptoKey` object | MDN |
 | `StorageManager.persist()`/`persisted()` | Request durable storage; a request is not a guarantee | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist) |
-| Web Workers | Keep encryption and indexing off the typing path | — |
+| Web Workers | Keep encryption and indexing off the typing path | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) |
 | WebAuthn or a local PIN (optional) | Unlock UX gate — not a substitute for the encryption itself | MDN |
 
 ## The Browser Reality Check
