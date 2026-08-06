@@ -24,14 +24,14 @@ Admin consoles, workflow tools, chat systems, monitoring dashboards — same pat
 
 | API | Job | Reference |
 |---|---|---|
-| `BroadcastChannel` | Low-latency same-origin messaging between tabs | — |
-| `storage` events (`localStorage`) | The broad, ugly, universally-supported fallback signaling channel | — |
-| `SharedWorker` (where supported) | Single shared execution context across tabs | — |
-| Service Worker (coordination role) | Central event handling, cache/queue mediation | — |
-| `navigator.locks` (Web Locks) | Cooperative lock management for critical sections | — |
-| IndexedDB | Durable shared state and lease metadata | — |
-| Page Visibility API | Active/inactive hints feeding leadership decisions | — |
-| `beforeunload`/`visibilitychange` | Best-effort lease release — never a guarantee | — |
+| `BroadcastChannel` | Low-latency same-origin messaging between tabs | [MDN](https://developer.mozilla.org/docs/Web/API/BroadcastChannel) |
+| `storage` events (`localStorage`) | The broad, ugly, universally-supported fallback signaling channel | [MDN](https://developer.mozilla.org/docs/Web/API/Window/storage_event) |
+| `SharedWorker` (where supported) | Single shared execution context across tabs | [MDN](https://developer.mozilla.org/docs/Web/API/SharedWorker) |
+| Service Worker (coordination role) | Central event handling, cache/queue mediation | [MDN](https://developer.mozilla.org/docs/Web/API/Service_Worker_API) |
+| `navigator.locks` (Web Locks) | Cooperative lock management for critical sections | [MDN](https://developer.mozilla.org/docs/Web/API/Web_Locks_API) |
+| IndexedDB | Durable shared state and lease metadata | [MDN](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) |
+| Page Visibility API | Active/inactive hints feeding leadership decisions | [MDN](https://developer.mozilla.org/docs/Web/API/Page_Visibility_API) |
+| `beforeunload`/`visibilitychange` | Best-effort lease release — never a guarantee | [beforeunload (MDN)](https://developer.mozilla.org/docs/Web/API/Window/beforeunload_event), [visibilitychange (MDN)](https://developer.mozilla.org/docs/Web/API/Document/visibilitychange_event) |
 
 ## The Browser Reality Check
 
