@@ -108,6 +108,12 @@ Enhancements are optional acceleration.
 - Ensure telemetry design cannot be repurposed into covert tracking.
 - Maintain user trust with explicit disclosures for degraded feature behavior.
 
+## Related Privacy-Sandbox APIs
+
+- Attribution Reporting API: aggregate conversion measurement under privacy restrictions.
+- Topics API / Protected Audience: ad relevance and audience workflows without third-party cookies.
+- Private State Tokens: anti-fraud trust signals without persistent identity tracking.
+
 Privacy-resilient architecture is not anti-product.
 It is anti-surprise.
 

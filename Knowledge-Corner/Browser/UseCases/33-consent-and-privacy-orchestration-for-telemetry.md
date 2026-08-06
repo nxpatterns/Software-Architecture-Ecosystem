@@ -50,6 +50,13 @@ A system can:
 - region-aware policy mapping
 - immutable audit trail for policy changes
 
+## Related APIs to Map in Policy Rules
+
+- Attribution Reporting API
+- Topics API / Protected Audience
+- Private State Tokens
+- FedCM
+
 ## Test Matrix
 
 - first-load race conditions

@@ -119,6 +119,12 @@ Enhanced mode is for smoother UX, not for core trust guarantees.
 - Minimize auth data persistence duration on device.
 - Audit cross-tab propagation paths for accidental data leakage.
 
+## Related Browser Identity APIs
+
+- FedCM (Federated Credential Management): third-party-cookie-resilient federated login path.
+- Storage Access API: embedded login continuity when strict cookie policies apply.
+- Cookie Store API: async cookie lifecycle handling in service-worker-driven auth orchestration.
+
 Auth bugs are rarely "just frontend bugs."
 They are incident reports in slow motion.
 

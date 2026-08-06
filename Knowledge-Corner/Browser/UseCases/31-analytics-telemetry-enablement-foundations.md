@@ -121,6 +121,12 @@ Enhanced mode is acceleration, not truth.
 - Enforce event retention and deletion policies per region/legal framework.
 - Maintain auditability of schema changes and consent logic changes.
 
+## Related Browser-Native Measurement APIs
+
+- Attribution Reporting API for privacy-preserving conversion measurement.
+- Topics API / Protected Audience where ad-relevance and campaign workflows require browser-native alternatives.
+- Private State Tokens where anti-fraud confidence is needed without identity-grade joins.
+
 Telemetry without privacy discipline is not intelligence.
 It is liability with storage costs.
 

@@ -23,6 +23,12 @@ A team can:
 - consent-aware attribution metadata collection
 - probabilistic/aggregate attribution layers where deterministic links fail
 
+## Browser-Native Replacement APIs (Must Include)
+
+- Attribution Reporting API for conversion measurement without cross-site user tracking.
+- Topics API / Protected Audience for ad-relevance and audience workflows under third-party-cookie restrictions.
+- Private State Tokens for anti-fraud confidence signals without persistent identity joins.
+
 ## What breaks first
 
 - last-click overfitting from partial data
