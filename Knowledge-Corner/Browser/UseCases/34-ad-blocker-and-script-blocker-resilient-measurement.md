@@ -19,11 +19,11 @@ A telemetry system can:
 
 | Practice | Job | Reference |
 |---|---|---|
-| First-party telemetry endpoints | Avoid third-party domains that block lists target first | — |
-| Graceful SDK fallback layers | Degrade instead of silently failing when a script never loads | — |
-| Blocked-request heuristics | Detect the failure pattern, don't just absorb it silently | — |
-| Local counters for unsent event classes | Know what didn't ship, not just what did | — |
-| Delivery health metrics by browser cohort | Blind spots vary by cohort — measure them as such | — |
+| First-party telemetry endpoints | Avoid third-party domains that block lists target first | [MDN – Same-origin policy](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy) |
+| Graceful SDK fallback layers | Degrade instead of silently failing when a script never loads | [MDN – HTMLScriptElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLScriptElement), [SRI (MDN)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) |
+| Blocked-request heuristics | Detect the failure pattern, don't just absorb it silently | [MDN – Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), [MDN – navigator.onLine](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine) |
+| Local counters for unsent event classes | Know what didn't ship, not just what did | [MDN – IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
+| Delivery health metrics by browser cohort | Blind spots vary by cohort — measure them as such | [MDN – User-Agent Client Hints](https://developer.mozilla.org/en-US/docs/Web/API/User-Agent_Client_Hints_API) |
 
 ## The Browser Reality Check
 

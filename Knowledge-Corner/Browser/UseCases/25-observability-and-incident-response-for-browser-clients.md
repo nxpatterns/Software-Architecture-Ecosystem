@@ -23,8 +23,8 @@ Any advanced web app with meaningful client logic — same observability pattern
 |---|---|---|
 | `PerformanceObserver` + marks/measures | Latency and rendering timing signals | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver) |
 | `error`/`unhandledrejection` (global) | Runtime failure collection | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/error_event) |
-| Network instrumentation (fetch/XHR wrappers) | Request outcomes and retry-chain visibility | — |
-| Service worker telemetry hooks | Offline/queue/sync event tracing | — |
+| Network instrumentation (fetch/XHR wrappers) | Request outcomes and retry-chain visibility | [fetch (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch), [XMLHttpRequest (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest) |
+| Service worker telemetry hooks | Offline/queue/sync event tracing | [Service Worker API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API), [Background Sync API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Background_Synchronization_API) |
 | `navigator.storage.estimate()` | Local durability context alongside every incident | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/estimate) |
 | Page Visibility / lifecycle signals | Foreground/background correlation for every event | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) |
 | `navigator.sendBeacon()` | Reliable diagnostic delivery on page unload | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon) |

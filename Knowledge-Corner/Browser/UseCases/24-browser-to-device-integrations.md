@@ -26,8 +26,8 @@ Logistics, healthcare intake, industrial maintenance, POS, manufacturing QA — 
 | WebUSB | USB device communication with explicit user permission | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API) |
 | Web Serial | Serial port access for adapters and legacy equipment | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API) |
 | WebHID | Low-level HID device interaction, where supported | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebHID_API) |
-| Permissions + chooser UX | Browser-mediated user consent path | — |
-| Secure context (HTTPS) | Mandatory for all four device APIs above | — |
+| Permissions + chooser UX | Browser-mediated user consent path | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API) |
+| Secure context (HTTPS) | Mandatory for all four device APIs above | [MDN](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts) |
 | Service Worker (supporting role) | Offline shell, command queue coordination around device sessions | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) |
 | `BroadcastChannel`/`SharedWorker` (optional) | Cross-tab state to avoid double-connection chaos | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API) |
 

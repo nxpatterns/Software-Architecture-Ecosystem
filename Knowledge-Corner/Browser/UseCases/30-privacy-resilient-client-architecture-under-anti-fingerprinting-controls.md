@@ -21,12 +21,12 @@ Color extraction tools, media analyzers, analytics-heavy dashboards — same res
 
 | Practice / API | Job | Reference |
 |---|---|---|
-| Runtime capability/behavior probes | Never a browser-brand assumption baked into the code | — |
-| Canvas/media APIs with tolerance-aware logic | Accept that output is approximate, not pixel-stable | — |
-| Storage APIs with partition-aware session models | Design for storage that doesn't cross partitions cleanly | — |
+| Runtime capability/behavior probes | Never a browser-brand assumption baked into the code | [MDN – Feature detection](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Testing/Feature_detection) |
+| Canvas/media APIs with tolerance-aware logic | Accept that output is approximate, not pixel-stable | [MDN – Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API), [MDN – Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) |
+| Storage APIs with partition-aware session models | Design for storage that doesn't cross partitions cleanly | [MDN – Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API), [MDN – Storage quotas and eviction criteria](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria) |
 | Permission + secure-context checks | Explicit fallback messaging, not a silent failure | [MDN – Permissions API](https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API) |
-| Feature flag governance | Privacy-sensitive modules gated and reversible | — |
-| Minimized telemetry | Measures reliability without becoming a tracking surface itself | — |
+| Feature flag governance | Privacy-sensitive modules gated and reversible | [OpenFeature](https://openfeature.dev/docs/reference/intro/) |
+| Minimized telemetry | Measures reliability without becoming a tracking surface itself | [W3C TAG – Fingerprinting Guidance](https://www.w3.org/TR/fingerprinting-guidance/) |
 
 ## The Browser Reality Check
 

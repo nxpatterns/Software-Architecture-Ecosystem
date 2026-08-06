@@ -26,7 +26,7 @@ Telehealth, support calls, virtual classrooms, remote inspections — same trans
 | SDP negotiation | Codec and media capability agreement between peers | [MDN – Session lifetime](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Session_lifetime) |
 | `RTCDataChannel` (optional) | Low-latency side-channel data alongside the media | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel) |
 | `RTCPeerConnection.getStats()` | Runtime quality metrics for adaptation and troubleshooting | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/getStats) |
-| `HTMLMediaElement` | Local and remote stream rendering | — |
+| `HTMLMediaElement` | Local and remote stream rendering | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement) |
 
 ## The Browser Reality Check
 

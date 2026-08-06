@@ -19,11 +19,11 @@ A product team can:
 
 | API / Practice | Job | Reference |
 |---|---|---|
-| Deterministic client assignment (or server-issued) | Stable, reproducible variant bucketing | — |
-| Exposure event hooks at render/interaction boundaries | Fire only when the variant was genuinely seen or used | — |
+| Deterministic client assignment (or server-issued) | Stable, reproducible variant bucketing | [MurmurHash3 (deterministic bucketing)](https://en.wikipedia.org/wiki/MurmurHash) |
+| Exposure event hooks at render/interaction boundaries | Fire only when the variant was genuinely seen or used | [MDN – Intersection Observer API](https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API) |
 | Local assignment cache with versioning | Consistent assignment across reloads | [MDN – IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
 | `BroadcastChannel` for cross-tab consistency | One user, one assignment, regardless of tab count | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API) |
-| Batched event delivery with idempotency keys | No phantom double-exposure from a retried request | — |
+| Batched event delivery with idempotency keys | No phantom double-exposure from a retried request | [MDN – Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API), [HTTP Idempotency-Key (IETF draft)](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) |
 
 ## The Browser Reality Check
 

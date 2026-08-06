@@ -19,11 +19,11 @@ A system can:
 
 | API / Practice | Job | Reference |
 |---|---|---|
-| Consent state store with explicit categories | The single source of truth every producer checks against | — |
-| Runtime gate in front of every telemetry producer | No producer fires without checking first | — |
-| Queue filtering and purge controls | Already-buffered events get filtered, not just future ones | — |
+| Consent state store with explicit categories | The single source of truth every producer checks against | [MDN – Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API) |
+| Runtime gate in front of every telemetry producer | No producer fires without checking first | [MDN – Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) |
+| Queue filtering and purge controls | Already-buffered events get filtered, not just future ones | [MDN – IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
 | Cross-tab consent sync | One consent decision, every open tab, immediately | [MDN – Broadcast Channel API](https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API) |
-| Auditable policy version tagging | Every event carries the policy version it was collected under | — |
+| Auditable policy version tagging | Every event carries the policy version it was collected under | [W3C PROV-Overview](https://www.w3.org/TR/prov-overview/) |
 
 ## The Browser Reality Check
 

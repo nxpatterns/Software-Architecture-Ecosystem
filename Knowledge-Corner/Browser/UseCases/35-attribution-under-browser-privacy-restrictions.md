@@ -18,10 +18,10 @@ A team can:
 
 | Practice / API | Job | Reference |
 |---|---|---|
-| First-party event stitching with bounded identity windows | Deterministic attribution where it's actually still possible | — |
-| Campaign parameter normalization and expiration | UTM-style params handled consistently, never trusted indefinitely | — |
-| Consent-aware attribution metadata collection | Attribution data follows the same consent rules as everything else | — |
-| Probabilistic/aggregate attribution layers | The honest fallback where deterministic links genuinely fail | — |
+| First-party event stitching with bounded identity windows | Deterministic attribution where it's actually still possible | [MDN – First-party cookies](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Third-party_cookies#what_is_the_problem_with_third-party_cookies) |
+| Campaign parameter normalization and expiration | UTM-style params handled consistently, never trusted indefinitely | [UTM parameters (Wikipedia)](https://en.wikipedia.org/wiki/UTM_parameters) |
+| Consent-aware attribution metadata collection | Attribution data follows the same consent rules as everything else | [MDN – Permissions API](https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API) |
+| Probabilistic/aggregate attribution layers | The honest fallback where deterministic links genuinely fail | [Attribution Reporting API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Attribution_Reporting_API) |
 
 ## Browser-Native Replacement APIs (Must Include)
 

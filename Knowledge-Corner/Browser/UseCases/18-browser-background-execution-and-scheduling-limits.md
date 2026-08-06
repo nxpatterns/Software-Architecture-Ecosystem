@@ -23,14 +23,14 @@ Messaging, workflow approvals, field data sync, reminders, incident dashboards �
 
 | API | Job | Reference |
 |---|---|---|
-| Service Worker | Event-driven background execution entry point | — |
-| Push API | Server-to-browser delivery trigger | — |
-| Notifications API | The user-visible surface for that trigger | — |
+| Service Worker | Event-driven background execution entry point | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) |
+| Push API | Server-to-browser delivery trigger | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) |
+| Notifications API | The user-visible surface for that trigger | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API) |
 | Background Sync API | Deferred one-off sync — Chromium only | [caniuse](https://caniuse.com/background-sync) |
-| Periodic Background Sync | Scheduled sync attempts, narrower support still | — |
-| IndexedDB | Persistent queue/state for resumable work | — |
-| Cache Storage API | Offline shell, deterministic startup assets | — |
-| Page Visibility API | Behavior changes on foreground/background transitions | — |
+| Periodic Background Sync | Scheduled sync attempts, narrower support still | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API) |
+| IndexedDB | Persistent queue/state for resumable work | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
+| Cache Storage API | Offline shell, deterministic startup assets | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage) |
+| Page Visibility API | Behavior changes on foreground/background transitions | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) |
 
 ## The Browser Reality Check
 

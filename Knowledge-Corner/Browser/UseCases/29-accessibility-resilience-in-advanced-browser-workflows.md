@@ -25,9 +25,9 @@ Enterprise forms, media workflows, admin consoles — same resilience pattern, d
 | WAI-ARIA roles/states/properties | Fills gaps where native semantics fall short, for custom widgets | [MDN – ARIA](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA) |
 | Focus management (`focus()`, roving tabindex, focus traps) | Deterministic keyboard navigation | [MDN – Focus management](https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Keyboard-navigable_JavaScript_widgets) |
 | `aria-live` regions | Asynchronous status updates announced to assistive tech | [MDN – ARIA live regions](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions) |
-| Keyboard event handling | Explicit, documented interaction contracts per widget | — |
+| Keyboard event handling | Explicit, documented interaction contracts per widget | [MDN – KeyboardEvent](https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent) |
 | `prefers-reduced-motion`/`prefers-contrast` | Adaptive UX respecting stated user preferences | [MDN – prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) |
-| Canvas/SVG accessible alternatives | Parallel DOM, textual summaries, actionable equivalents | — |
+| Canvas/SVG accessible alternatives | Parallel DOM, textual summaries, actionable equivalents | [MDN – Canvas accessibility](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/canvas#accessibility), [MDN – SVG and accessibility](https://developer.mozilla.org/en-US/docs/Web/SVG/Guides/SVG_and_accessibility) |
 
 ## The Browser Reality Check
 

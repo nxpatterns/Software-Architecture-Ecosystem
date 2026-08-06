@@ -21,12 +21,12 @@ Media, offline, background sync, device APIs, rich clipboard — any modern app 
 
 | API / Practice | Job | Reference |
 |---|---|---|
-| Runtime capability detection (`in` checks, API probing) | Feature presence verification | — |
+| Runtime capability detection (`in` checks, API probing) | Feature presence verification | [MDN – `in` operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/in), [MDN – Progressive Enhancement](https://developer.mozilla.org/en-US/docs/Glossary/Progressive_Enhancement) |
 | Permission probing + guarded execution | Check before you leap, every time | [MDN – Permissions API](https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API) |
-| Feature flags / remote config | Controlled rollout, fast rollback | — |
-| Telemetry instrumentation | Capability distribution and error-rate correlation | — |
-| Cohort/A-B rollout controls | Staged exposure by browser/version cohort | — |
-| Fallback UX components | Explicit degraded-mode flows, not a blank space | — |
+| Feature flags / remote config | Controlled rollout, fast rollback | [OpenFeature](https://openfeature.dev/docs/reference/intro/) |
+| Telemetry instrumentation | Capability distribution and error-rate correlation | [OpenTelemetry JS](https://opentelemetry.io/docs/languages/js/) |
+| Cohort/A-B rollout controls | Staged exposure by browser/version cohort | [A/B testing](https://en.wikipedia.org/wiki/A/B_testing) |
+| Fallback UX components | Explicit degraded-mode flows, not a blank space | [MDN – Progressive Enhancement](https://developer.mozilla.org/en-US/docs/Glossary/Progressive_Enhancement) |
 | Service worker versioning | Safe, progressive rollout of client behavior | [MDN – Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) |
 
 ## The Browser Reality Check

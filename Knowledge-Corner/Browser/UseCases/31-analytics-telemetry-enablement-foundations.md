@@ -21,13 +21,13 @@ Product analytics, reliability telemetry, UX optimization, experiment evaluation
 
 | API / Practice | Job | Reference |
 |---|---|---|
-| Explicit instrumentation hooks | Deliberate event capture points in UI/business logic | — |
+| Explicit instrumentation hooks | Deliberate event capture points in UI/business logic | [OpenTelemetry JS](https://opentelemetry.io/docs/languages/js/) |
 | In-memory queue + IndexedDB fallback | Structured event queue with a durable backstop | [MDN – IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
-| Batch transport via `fetch` + retry/backoff | Reliable delivery under real network conditions | — |
+| Batch transport via `fetch` + retry/backoff | Reliable delivery under real network conditions | [MDN – Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) |
 | Lifecycle-aware flush (`visibilitychange`, `pagehide`) | Flush before the browser makes the choice for you | [MDN – Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) |
 | `navigator.sendBeacon()` | Best-effort delivery that survives page unload | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/sendBeacon) |
-| Strictly minimized context metadata | Enough to be useful, not enough to identify | — |
-| Feature-flag-controlled rollout | Instrumentation itself gets staged and reversible rollout | — |
+| Strictly minimized context metadata | Enough to be useful, not enough to identify | [W3C TAG – Fingerprinting Guidance](https://www.w3.org/TR/fingerprinting-guidance/) |
+| Feature-flag-controlled rollout | Instrumentation itself gets staged and reversible rollout | [OpenFeature](https://openfeature.dev/docs/reference/intro/) |
 
 ## The Browser Reality Check
 
