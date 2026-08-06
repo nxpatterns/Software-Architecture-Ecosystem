@@ -1,186 +1,122 @@
 # Use Case 14: Pixel-Perfect Printing From the Browser
 
-Most teams assume a document becomes “print-ready” only after a server turns
-HTML into a PDF.
-That is often cargo cult with a billing account.
+"Print-ready" gets translated by most teams into "a server turns HTML into a PDF." That's often cargo cult wearing a billing account.
 
-The browser can lay out invoices, tickets, labels, and forms directly, then hand
-them to the user's print dialog. No server-side PDF worker required. Just CSS,
-pagination, fonts, printer settings, and several opportunities for humility.
+The browser can lay out invoices, tickets, labels, and forms directly and hand them to the user's print dialog. No server-side PDF worker required. Just CSS, pagination, fonts, printer settings, and several fresh opportunities for humility.
 
-## Why this is a good next "hard topic"
+## Why 1440 Pixels Was Never a Document
 
-Because a page that looks correct at 1440 pixels is not a document.
-The moment paper size, page breaks, browser headers, and printer margins enter
-the room, your normal responsive layout becomes a very confident liability.
+A page that looks correct on a 1440px screen is not a document. The moment paper size, page breaks, browser headers, and printer margins enter the room, a perfectly reasonable responsive layout becomes a very confident liability.
 
-## User Story (Abstracted)
-
-A user can:
+## The User Story, Stripped of Domain
 
 - open a document-like page,
 - review an invoice, ticket, label sheet, or receipt,
-- choose a paper size or printer in the browser print flow,
-- print it or save it through the local print dialog,
-- receive stable page breaks and readable typography,
-- and get an output that needs no server-side PDF generation step.
+- pick a paper size or printer in the browser's print flow,
+- print or save it through the local dialog,
+- get stable page breaks and readable typography,
+- receive an output that needed no server-side PDF step at all.
 
-We do not care which document.
-Could be a dispatch ticket, a tax invoice, a packing slip, or a barcode label.
-Same rendering problem. Different stationery.
+Dispatch ticket, tax invoice, packing slip, barcode label — same rendering problem, different stationery.
 
 ## Core Browser Technologies
 
-- `@media print`: apply document styles only to print and print-preview output.
-- `@page`: set page size, orientation, and printable margins.
-- `break-before` / `break-after` / `break-inside`: control pagination without teaching every `div` how to be a sheet of paper.
-- `page-break-*` legacy aliases: fallback declarations for older print CSS and
-  existing layouts; the modern `break-*` properties are the preferred API
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/page-break-after)).
-- `window.print()`: invoke the user-agent print flow after the document is
-  fully rendered.
-- `beforeprint` / `afterprint`: prepare and restore transient print UI.
-- `@font-face` and `document.fonts.ready`: load the exact font files before
-  allowing layout-sensitive output.
-- `Canvas` / SVG (optional): create deterministic barcode, QR, and label art.
-- `CSS counters` / page-margin boxes (optional): page numbers and running labels where the target browser actually supports them.
-- Client-side PDF library (optional): alternative download path when users need a generated PDF file rather than a printer dialog.
+| API | Job | Reference |
+|---|---|---|
+| `@media print` | Print-only styling, separate from the screen story | — |
+| `@page` | Page size, orientation, printable margins | — |
+| `break-before`/`break-after`/`break-inside` | Pagination control without teaching every `div` to be a sheet of paper | — |
+| `page-break-*` (legacy) | Fallback aliases — `break-*` is the preferred modern API | [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/page-break-after) |
+| `window.print()` | Invokes the user-agent print flow, only after full render | — |
+| `beforeprint`/`afterprint` | Prepare and restore transient print-only UI | — |
+| `@font-face` + `document.fonts.ready` | Load exact font files before any layout-sensitive output | — |
+| Canvas/SVG (optional) | Deterministic barcode, QR, label art | — |
+| Client-side PDF library (optional) | Alternative when users need a downloadable file, not a printer dialog | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+Chrome gives you a preview. Safari gives you a print dialog and a genuine reason to own a test printer.
 
-- Chromium (Chrome, Edge, Arc): the strongest direct-print path. Chrome supports `@page`, and from Chrome 131 it can place generated content in page margins; its own print headers and footers remain user-agent content controlled in the print dialog ([Chrome for Developers](https://developer.chrome.com/blog/print-margins)).
-- Firefox: safe for the baseline `@page`, `@media print`, and `break-*` layout, but do not make page-margin decoration the thing that keeps an invoice legally comprehensible ([Chrome for Developers](https://developer.chrome.com/blog/print-margins)).
-- Safari (macOS): supports current `@page` paged-media basics ([caniuse](https://caniuse.com/css-paged-media)), but it exposes webpage URL, date, background, and header/footer choices through the macOS print dialog ([Apple Support](https://support.apple.com/en-euro/guide/safari/ibrw1060/mac)).
-  That is not Chrome's preview sidebar wearing a different shirt.
-- Treat Chrome preview and Safari's dialog as separate pagination targets. Font
-  metrics vary across browsers; one changed line wrap is enough to move every
-  later page break ([Adobe Typekit](https://blog.typekit.com/2010/07/14/font-metrics-and-vertical-space-in-css/)).
+Chromium is the strongest direct-print path — `@page` support, and from Chrome 131, generated content can live inside page margins, though the browser's own headers/footers stay user-agent-controlled inside the print dialog regardless of what your CSS wants.<sup>[1]</sup> Firefox handles baseline `@page`, `@media print`, and `break-*` layout safely — but don't make page-margin decoration the thing that keeps an invoice legally comprehensible; it's decoration, not structure.<sup>[1]</sup> Safari supports current `@page` paged-media basics, but exposes URL, date, background, and header/footer choices through the macOS print dialog itself.<sup>[2]</sup> That is not Chrome's preview sidebar wearing a different shirt — it's a genuinely different surface with its own controls.
 
-### Mobile
+Treat Chrome preview and Safari's dialog as separate pagination targets, full stop. Font metrics vary across engines, and one changed line wrap is enough to shove every subsequent page break out of position.<sup>[3]</sup>
 
-- Android Chromium: useful for receipts and simple labels, but validate the
-  actual printer/share destination rather than declaring “PDF output” solved.
-- iOS Safari / WebKit-based browsers: build for a user-driven print/share flow,
-  not unattended production printing.
-  - Keep pages short and single-purpose.
-  - Avoid a layout that relies on manually tuned printer margins.
-  - Do not promise a label will land at a physical size unless the target
-    printer, paper, scaling setting, and device have been tested together.
+## What Breaks First
 
-Short version: Chrome gives you a preview.
-Safari gives you a print dialog and a reason to own a test printer.
+- Assuming screen CSS just needs `display: none` on the nav and calling that a print stylesheet.
+- Using deprecated `page-break-*` alone, then wondering why a modern layout fragments strangely.
+- Letting flex, grid, transforms, fixed heights, or overflow rules survive untouched into print — none of them were designed with paper in mind.
+- Putting business-critical text into a browser-generated header or footer the user can simply disable.<sup>[1]</sup>
+- Letting the first print happen before web fonts finish loading — invisible-text-until-swap is bad enough on screen; on paper it's a wrong document.
+- Assuming Chrome preview, Safari's dialog, and the actual physical printer share identical font metrics and pagination. They don't, reliably.<sup>[3]</sup>
+- Calling anything "pixel-perfect" before testing the actual paper size on an actual printer.
 
-## What Usually Breaks First
-
-- Assuming screen CSS merely needs a `display: none` for the navigation.
-- Using deprecated `page-break-*` alone and then wondering why a modern layout
-  fragments strangely.
-- Letting flex, grid, transforms, fixed heights, or overflow rules survive
-  untouched into print layout.
-- Putting business-critical text in a browser-generated header or footer that the user can disable ([Chrome for Developers](https://developer.chrome.com/blog/print-margins)).
-- Letting the first print happen before web fonts finish loading.
-- Assuming Chrome preview, Safari's macOS dialog, and the final printer use identical font metrics, scaling, or pagination ([Adobe Typekit](https://blog.typekit.com/2010/07/14/font-metrics-and-vertical-space-in-css/)).
-- Calling it “pixel-perfect” before testing the actual paper size.
-
-Paper is an integration environment. It has drivers.
+Paper is an integration environment. It has drivers, and drivers have opinions.
 
 ## Minimal Technical Blueprint
 
-1. Create a dedicated document container. Do not print the application shell
-   and attempt to hide seventeen unrelated components later.
-2. Define real paper rules in `@page`: approved size, orientation, and a
-   conservative margin that leaves room for printer hardware.
-3. Add a separate `@media print` stylesheet. Flatten screen-only layout where
-   necessary: remove navigation, animations, sticky controls, overflow clips,
-   and decorative backgrounds that do not belong on paper.
-4. Use `break-before`, `break-after`, and `break-inside: avoid` on semantic
-   chunks: invoice totals, ticket records, label rows, and signature blocks.
-   Keep the legacy `page-break-*` alias only as a measured fallback.
-5. Use explicit physical units (`mm`, `in`, `pt`) for document geometry; do
-   not let viewport units decide where a perforation lives.
-6. Self-host the exact font files, declare the required weights, wait for
-   `document.fonts.ready`, then enable Print. Vertical font metrics vary among
-   typefaces and browser engines, which is enough to move a later line onto a
-   new page ([Adobe Typekit](https://blog.typekit.com/2010/07/14/font-metrics-and-vertical-space-in-css/)).
-7. Render machine-readable marks as SVG or high-resolution canvas, with a
-   quiet zone and physical-size test fixture. A barcode that looks artistic but
-   will not scan is not a barcode.
-8. Call `window.print()` only from a user action. Use `beforeprint` to expose
-   print-only content and `afterprint` to put the app back together.
-9. Provide a client-side PDF alternative only when the user needs a file. Keep
-   its layout test suite separate; “same HTML” is not the same renderer.
+```css
+@page {
+  size: A4;
+  margin: 15mm; /* physical units, never viewport units */
+}
 
-## Compatibility Strategy (Pragmatic)
+@media print {
+  nav, .app-shell-chrome, .sticky-controls { display: none; }
+  .invoice-total, .signature-block { break-inside: avoid; }
+  .ticket-record { break-after: page; }
+}
+```
+```javascript
+document.fonts.ready.then(() => {
+  printButton.disabled = false; // never print before the exact font metrics are loaded
+});
+```
 
-- Baseline mode (all modern browsers):
-  - `@media print`, `@page` size/margins, explicit fonts,
-  - normal-flow document layout,
-  - tested `break-*` rules with legacy aliases where required,
-  - user-controlled print or save-to-PDF flow.
-- Enhanced mode (supporting browsers):
-  - Chrome page-margin boxes for generated page numbers and running text,
-  - print-specific counters and richer pagination decoration,
-  - a client-side PDF download for workflows that need an attachment instead
-    of physical paper.
+1. Build a dedicated document container. Don't print the application shell and hope to hide seventeen unrelated components with CSS after the fact.
+2. Define real paper rules in `@page`: approved size, orientation, a conservative margin that leaves room for actual printer hardware tolerances.
+3. Separate `@media print` stylesheet. Strip navigation, animations, sticky controls, overflow clips, decorative backgrounds — none of it belongs on paper.
+4. Use `break-before`, `break-after`, `break-inside: avoid` on semantic chunks — invoice totals, ticket records, label rows, signature blocks. Keep the legacy alias only as a measured fallback, not the primary mechanism.
+5. Physical units — `mm`, `in`, `pt` — for document geometry. Never let a viewport unit decide where a perforation lands.
+6. Self-host the exact font files, declare the required weights, wait for `document.fonts.ready`, only then enable printing. Vertical metrics vary by typeface and engine enough to move a later line onto a new page entirely.<sup>[3]</sup>
+7. Render machine-readable marks as SVG or high-resolution canvas, with a real quiet zone and a physical-size test fixture. A barcode that looks artistic but doesn't scan isn't a barcode.
+8. Call `window.print()` only from a user action. `beforeprint` exposes print-only content, `afterprint` puts the app back together.
+9. Offer a client-side PDF alternative only when users genuinely need a file. Keep its layout test suite separate — "same HTML" does not mean "same renderer."
 
-The core CSS Paged Media model covers pages and breaks, but browser support does
-not extend to everything in the specification: no browser supports `marks` and
-`bleed` descriptors today ([MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Paged_media)).
+## Compatibility Strategy
 
-This is progressive enhancement, not an excuse to print an empty second page.
+**Baseline:** `@media print`, `@page` size/margins, explicit fonts, normal-flow layout, tested `break-*` rules with legacy aliases where needed, user-controlled print or save-to-PDF flow.
 
-## Security and Compliance Notes
+**Enhanced:** Chrome page-margin boxes for generated page numbers and running text, richer pagination decoration, a client-side PDF download for workflows needing an attachment instead of physical paper.
 
-- Do not put secrets in a visually hidden screen element and assume print CSS
-  will save you. Print from a purpose-built document DOM.
-- Treat a print preview as a disclosure surface on shared devices: account
-  numbers, addresses, QR payloads, and tax identifiers need the same access
-  controls as the page itself.
-- If a client-side PDF library embeds fonts or images, verify its licenses and
-  cache behavior.
-- Add an explicit “printed copy may contain personal data” notice where policy
-  requires it. The browser cannot retrieve a page from a printer tray.
+The CSS Paged Media spec covers pages and breaks, but no browser today implements `marks` or `bleed` descriptors — that gap is real, not a testing oversight on your part.<sup>[4]</sup> Progressive enhancement. Not an excuse for printing an empty second page.
+
+## Security and Compliance
+
+Never put secrets in a visually hidden screen element and assume print CSS will save you — print from a purpose-built document DOM instead. Treat print preview as a disclosure surface on shared devices: account numbers, addresses, QR payloads, and tax identifiers all need the same access controls as the source page. If a client-side PDF library embeds fonts or images, verify its licenses and cache behavior before it ships. Add an explicit "printed copy may contain personal data" notice where policy requires it — the browser has no way to retrieve a page once it's sitting in a printer tray.
 
 ## Test Matrix You Actually Need
 
-- Chrome/Edge latest: A4, Letter, portrait, landscape, print preview, and
-  Save as PDF with headers/footers both on and off.
-- Firefox latest: long tables, forced breaks, avoided breaks, and a document
-  that spills onto exactly one more page.
-- Safari macOS latest: the same fixtures through the native print dialog,
-  including Safari header/footer and background settings.
-- At least one real office printer and one PDF destination for each supported
-  desktop browser.
+- Chrome/Edge: A4, Letter, portrait, landscape, print preview, Save as PDF with headers/footers on and off.
+- Firefox: long tables, forced breaks, avoided breaks, a document that spills onto exactly one extra page.
+- Safari macOS: the same fixtures through the native dialog, including Safari's own header/footer and background settings.
+- At least one real office printer and one PDF destination per supported desktop browser — not a simulation of either.
 - Android Chrome and iOS Safari for the mobile receipt/ticket flow.
-- Font unavailable, font slow to load, printer scaling at 95%/100%/fit-to-page,
-  and a barcode scan from the physical output.
+- Font unavailable, font slow to load, printer scaling at 95%/100%/fit-to-page, and an actual barcode scan off the physical output.
 
-If the test ends at a screenshot of Chrome preview, the printer has not been
-tested. It has been imagined.
+A test that ends at a screenshot of Chrome preview never touched a printer. It imagined one.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when the output is a bounded business document, ticket, receipt, or label, users can accept a browser-controlled print/save flow, supported browsers and paper formats are known in advance, and the team can maintain visual regression fixtures per browser.
 
-- the output is a bounded business document, ticket, receipt, or label,
-- users can accept a browser-controlled print/save flow,
-- the supported browsers and paper formats are known,
-- the team can maintain visual regression fixtures per browser.
+Skip it when a regulator, customer, or print house requires byte-identical PDF output, when the job needs crop marks, bleed, or other features no browser implements, or when unattended batch printing or exact industrial label calibration is the actual requirement.
 
-Avoid this pattern when:
+The browser can print the document. It cannot negotiate with the printer driver on your behalf, no matter how confident the CSS looks.
 
-- a regulator, customer, or print house requires byte-identical PDF output,
-- output needs crop marks, bleed, or other features browsers do not implement,
-- unattended batch printing or exact industrial label calibration is required.
+---
 
-Because yes, the browser can print the document.
-No, it cannot negotiate with the printer driver on your behalf.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Browser-based barcode and label composition**
-(physical dimensions, SVG/Canvas rendering, scanner verification, and why
-“100% scale” is not a measurement system).
+[1]: Chrome print margin content and header/footer behavior, [Chrome for Developers](https://developer.chrome.com/blog/print-margins).
+[2]: Safari macOS print dialog controls, [Apple Support](https://support.apple.com/en-euro/guide/safari/ibrw1060/mac).
+[3]: Cross-browser font metric variance affecting pagination, [Adobe Typekit Blog](https://blog.typekit.com/2010/07/14/font-metrics-and-vertical-space-in-css/).
+[4]: CSS Paged Media browser coverage gaps (`marks`, `bleed`), [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Paged_media).

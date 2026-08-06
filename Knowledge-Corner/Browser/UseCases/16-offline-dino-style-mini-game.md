@@ -1,161 +1,119 @@
 # Use Case 16: The Offline Dino Game Pattern — Playable Content With No Network
 
-Most web games are "offline" right up until a sound file, sprite sheet, font, or
-analytics tag asks the network for one tiny favor. Chrome's dinosaur game takes
-the stricter route: the game is already in the browser, so a dead connection is
-not an error state. It is the premise.
+Most web games are "offline" right up until a sound file, a sprite sheet, a font, or an analytics tag asks the network for one tiny favor. Chrome's dinosaur game takes the stricter route: the game is already in the browser, so a dead connection isn't an error state. It's the premise the whole thing was built on.
 
-## Why this is a good next "hard topic"
+## Why the One-Button Game Isn't a Beginner Exercise
 
-Because a one-button obstacle game looks like a beginner exercise until it has to
-run smoothly at any refresh rate, accept both a space bar and a thumb, make sound
-without violating autoplay policy, and keep doing all of that with zero network.
+It looks trivial until it has to run smoothly at any refresh rate, accept a space bar and a thumb equally, make sound without violating autoplay policy, and do all four of those things with genuinely zero network available.
 
-## User Story (Abstracted)
+## The User Story, Stripped of Domain
 
-A user can:
-
-- open a small game while completely offline,
+- open a small game completely offline,
 - start a run with a keyboard or an on-screen control,
 - jump or duck around obstacles,
-- see animation and score update smoothly,
+- watch animation and score update smoothly,
 - hear short local sound effects after choosing to start,
-- background the page, return, and resume without a giant physics jump,
-- and play without an account, backend, or loading spinner pretending to be progress.
+- background the page, return, resume without a giant physics jump,
+- play with no account, no backend, no loading spinner pretending to be progress.
 
-We do not care which game.
-Could be a runner, a reaction game, a puzzle, a training simulation, or a tiny
-bit of useful waiting-room entertainment. Same browser loop.
+A runner, a reaction game, a puzzle — same browser loop underneath, however the art looks.
 
 ## Core Browser Technologies
 
-- `Canvas` 2D: draws the player, obstacles, ground, score, and game-over state without a DOM node for every pixel.
-- `requestAnimationFrame()`: drives the render/update loop immediately before repaint.
-- `keydown` / `keyup` keyboard events: maintain pressed state for jump, duck, restart, and accessibility-friendly desktop controls.
-- `Pointer Events` (`pointerdown` / `pointerup`): provide tap/click controls and one input model for mouse, pen, and touch.
-- `Web Audio API` (`AudioContext`, `decodeAudioData()`, `AudioBufferSourceNode`, or `OscillatorNode`): this is the technology that plays game sound effects.
-- `visibilitychange`: pauses or resets frame timing when the game is hidden.
-- `Service Worker` plus `Cache Storage API` (web-app clone only): precaches the HTML, code, art, and sounds so an actual website can open offline after installation.
+| API | Job | Reference |
+|---|---|---|
+| Canvas 2D | Draws player, obstacles, ground, score, game-over — no DOM node per pixel | — |
+| `requestAnimationFrame()` | Drives the render/update loop right before repaint | — |
+| `keydown`/`keyup` | Pressed-state for jump, duck, restart, desktop accessibility | — |
+| Pointer Events | One input model covering mouse, pen, and touch | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events) |
+| Web Audio API | Sample-accurate, low-latency effects — the correct tool over `<audio>` for short sounds | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) |
+| `visibilitychange` | Pauses or discards frame timing when hidden | — |
+| Service Worker + Cache Storage (web-app clone only) | Precaches everything so a real website can open offline | [MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation) |
 
-An `<audio>` element is fine for a long music track. For short effects, Web Audio
-is usually the better game primitive: it offers sample-accurate, low-latency
-timing and a reusable mixing graph ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)).
-After the first explicit gesture creates or resumes that context, individual
-effects use the unlocked graph rather than each attempting a fresh media autoplay
-request ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices), [Chrome Developers](https://developer.chrome.com/blog/autoplay)).
+An `<audio>` element is fine for one long music track. For short effects, Web Audio wins on sample-accurate timing and a reusable mixing graph.<sup>[1]</sup> After the first explicit gesture creates or resumes the context, every subsequent effect uses that unlocked graph instead of each one gambling on a fresh autoplay request.<sup>[2]</sup>
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+The render loop is portable everywhere. Sound needs explicit permission, and phones famously don't come with a space bar.
 
-- Chromium (Chrome, Edge, Arc): Canvas 2D, `requestAnimationFrame()`, Pointer Events, and Web Audio are established platform features; audio is still subject to Chrome's audible-autoplay policy until the user interacts with the site ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API), [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame), [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API), [Chrome Developers](https://developer.chrome.com/blog/autoplay)).
-- Firefox: use the same explicit "Start with sound" or "Tap to play" gate. Browsers generally block programmatically initiated audible playback before user interaction, including Web Audio source playback ([MDN](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay)).
-- Safari (macOS): Canvas and the animation loop are not the problem. Creating or resuming the `AudioContext` from the start control is the boring, portable answer; MDN's Web Audio guidance is explicit that contexts created outside a gesture may begin suspended ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices)).
+Canvas 2D, `requestAnimationFrame()`, Pointer Events, and Web Audio are all established platform features in Chromium — audio still sits behind Chrome's audible-autoplay policy until genuine user interaction happens.<sup>[2]</sup> Firefox needs the same explicit "Start with sound" gate; browsers generally block programmatically initiated audible playback pre-interaction, Web Audio source playback included.<sup>[3]</sup>
 
-### Mobile
+Safari's Canvas and animation loop are not the problem. Creating or resuming the `AudioContext` from the start control is the boring, entirely portable answer — MDN is explicit that contexts created outside a gesture may simply begin suspended and stay that way.<sup>[4]</sup>
 
-- Android Chromium: render the same Canvas loop, but do not assume a hardware keyboard exists. A visible Jump control using Pointer Events makes the game usable with a thumb; Pointer Events are designed to cover mouse, pen, and touch input ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events)).
-- iOS Safari / WebKit-based browsers: the audio-unlock path is mandatory, not decorative. Create or resume the `AudioContext` directly from the first deliberate tap such as a Start button or `pointerup`; WebKit documents iOS Web Audio's user-gesture restriction, including that `touchend` can lift it where `touchstart` does not ([WebKit Bugzilla](https://bugs.webkit.org/show_bug.cgi?id=149367)). A keyboard-only runner is unusable on a normal touch device, so ship an on-screen button or tap-to-jump fallback; MDN's game guidance demonstrates handling touch input on the canvas ([MDN](https://developer.mozilla.org/en-US/docs/Games/Techniques/Control_mechanisms/Mobile_touch)).
+**On iOS, the audio-unlock path is mandatory, not decorative.** Create or resume the `AudioContext` directly from the first deliberate tap — a Start button, a `pointerup`. WebKit's own bug tracker documents the iOS Web Audio gesture restriction in detail, including that `touchend` can lift it where `touchstart` cannot.<sup>[5]</sup> A keyboard-only runner is simply unusable on a touch device — ship a real on-screen button or a tap-to-jump fallback, not an afterthought.
 
-Short version: the render loop is portable.
-Sound needs permission, and phones do not come with a space bar.
-
-## What Usually Breaks First
+## What Breaks First
 
 - Creating an `AudioContext` at module load, then wondering why the first jump is silent.
-- Binding only `keydown` and `keyup`, then shipping a game nobody can start on a phone.
-- Assuming every animation frame is 16.67 ms. High-refresh displays and throttled tabs both disagree.
-- Letting a hidden tab accrue ten seconds of elapsed time, then launching the dinosaur through every obstacle on return.
-- Calling the game offline while sprites, fonts, sounds, or score code still come from a CDN.
-- Using an `<audio>` tag per effect and accepting audible overlap, timing, and playback-state complexity as somebody else's problem.
-- Treating a Service Worker as optional for a website clone that must load with the network already gone.
-
-The native browser game needs no Service Worker because it is not fetched from the
-network at all. A website clone absolutely does: offline web apps work by having a
-service worker cache the resources they later serve without a network ([MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation)).
+- Binding only `keydown`/`keyup` and shipping a game nobody can start on a phone.
+- Assuming every animation frame is 16.67ms. High-refresh displays and throttled tabs both disagree, loudly.
+- Letting a hidden tab accrue ten seconds of elapsed time, then launching the dinosaur through every obstacle the instant it comes back.
+- Calling the game "offline" while sprites, fonts, sounds, or score logic still come from a CDN somewhere.
+- Using one `<audio>` tag per effect and accepting audible overlap and timing chaos as somebody else's problem to solve later.
+- Treating a Service Worker as optional for a website clone that has to load with the network already gone. The native browser game skips this entirely because it was never fetched over the network in the first place — a web clone has no such luxury.<sup>[6]</sup>
 
 ## Minimal Technical Blueprint
 
-1. Make the game state entirely local: player position and velocity, obstacle list,
-   score, speed, random seed, `running` flag, and a timestamp for the last frame.
-2. Size a single Canvas for its CSS box times `devicePixelRatio`, then scale the
-   drawing context so the game remains sharp without changing world coordinates.
-3. Register `keydown` and `keyup` handlers that update a small input state object;
-   use `event.code` for physical controls such as Space and ArrowDown, and prevent
-   scrolling only for keys the focused game actually owns.
-4. Render a large on-screen Jump button and bind `pointerdown` / `pointerup` to the
-   same input state. A canvas tap is a useful second path, not an excuse to hide the control.
-5. Route the first Start click, key press, or pointer release through `startGame()`.
-   Inside that user gesture, create or `resume()` one `AudioContext`, then preload
-   and `decodeAudioData()` local effect bytes into `AudioBuffer`s, or create simple
-   beeps with `OscillatorNode`.
-6. Start one `requestAnimationFrame()` loop. Calculate delta time from its timestamp,
-   clamp absurd gaps, update physics/collisions/score, render, then request the next
-   frame only while the run is active.
-7. On jump, collision, and score events, create short `AudioBufferSourceNode`s from
-   the decoded buffers and connect them to a shared gain node. Buffer source nodes
-   are disposable; the `AudioContext` is the durable mixer.
-8. On `visibilitychange`, pause the run or discard the next delta-time gap. Most
-   browsers pause animation-frame callbacks in background tabs, so pretending the
-   game kept running is how physics becomes performance art ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)).
-9. For a web-app clone, install a Service Worker that precaches every initial asset
-   into Cache Storage, then test an actual cold offline launch. For a native browser
-   feature, package the code and assets with the browser instead and skip the network entirely.
+```javascript
+let audioContext, jumpBuffer;
 
-## Compatibility Strategy (Pragmatic)
+startButton.addEventListener('pointerup', async () => {
+  audioContext ??= new AudioContext();
+  await audioContext.resume(); // must happen inside this gesture, every time
+  jumpBuffer = await decodeAudioData(await (await fetch('jump.wav')).arrayBuffer());
+  startGame();
+});
 
-- Baseline mode (all modern browsers):
-  - Canvas 2D rendering and a delta-time `requestAnimationFrame()` loop,
-  - keyboard controls plus a visible pointer/touch jump control,
-  - sound as an optional enhancement activated only from an explicit Start gesture
-    ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API), [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame), [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices)).
-- Enhanced mode (supporting browsers):
-  - predecoded `AudioBuffer` effects, shared gain controls, oscillator-generated effects,
-  - crisp high-DPI Canvas scaling, and optional local best-score persistence,
-  - Service Worker precaching when the pattern is deployed as a real web application.
+function loop(timestamp) {
+  const dt = Math.min(timestamp - lastFrame, 100); // clamp absurd gaps from a backgrounded tab
+  if (running) { updatePhysics(dt); render(); requestAnimationFrame(loop); }
+  lastFrame = timestamp;
+}
+```
 
-Do not call a page offline because it has a Canvas.
-Call it offline only after every required byte survives airplane mode.
+1. Keep game state entirely local: position, velocity, obstacle list, score, speed, random seed, `running` flag, last-frame timestamp.
+2. Size one Canvas to its CSS box times `devicePixelRatio`, scale the drawing context so it stays sharp without touching world coordinates.
+3. Register `keydown`/`keyup` against a small input state object, using `event.code` for physical keys, preventing scroll only on keys the game genuinely owns.
+4. Render a real on-screen Jump button bound to `pointerdown`/`pointerup` on the same input state — a second input path, never a hidden afterthought.
+5. Route the first Start click, keypress, or pointer release through `startGame()`. Inside that gesture: create or resume the `AudioContext`, decode local effect bytes into `AudioBuffer`s or build simple beeps with `OscillatorNode`.
+6. One `requestAnimationFrame()` loop. Compute delta time from its timestamp, clamp absurd gaps, update physics/collisions/score, render, request the next frame only while the run is active.
+7. On jump, collision, and score events, spin up short `AudioBufferSourceNode`s from the decoded buffers into a shared gain node — buffer sources are disposable, the context is the durable mixer.
+8. On `visibilitychange`, pause the run or discard the next delta-time gap. Most browsers already pause animation-frame callbacks in background tabs — pretending otherwise is how physics becomes accidental performance art.
+9. For a web-app clone, install a Service Worker precaching every initial asset into Cache Storage, then test an actual cold offline launch. For a native browser feature, skip the network story entirely — it ships with the browser.
+
+## Compatibility Strategy
+
+**Baseline:** Canvas 2D rendering, a delta-time `requestAnimationFrame()` loop, keyboard plus a visible pointer/touch jump control, sound as an enhancement activated only from an explicit Start gesture.
+
+**Enhanced:** predecoded `AudioBuffer` effects, shared gain control, oscillator-generated sounds, crisp high-DPI Canvas scaling, optional local best-score persistence, Service Worker precaching for a deployed web-app version.
+
+Don't call a page "offline" because it has a Canvas element. Call it offline only after every required byte survives an actual airplane-mode test.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge, Firefox latest, and Safari macOS latest with Space, Arrow,
-  and restart controls.
-- A high-refresh desktop display and a low-power laptop; verify speed comes from
-  elapsed time, not frame count.
-- Android Chrome on a physical phone: no hardware keyboard, repeated on-screen jumps,
-  first-tap audio unlock, rotation, and a background/foreground cycle.
-- iPhone Safari on a physical phone: start from a cold tab, tap the visual control,
-  confirm the first effect plays, then test a silent-device path with no broken UI.
-- A tab hidden for thirty seconds, then restored; confirm no giant simulation delta
-  or audio burst appears on return.
-- A full network block before launch for the native feature, or for a web clone after
-  its precache install; inspect that no required asset falls back to the network.
-- A fresh profile or cleared site data for the web clone; offline first visit should
-  fail honestly, while offline repeat launch should work after successful precaching.
+- Desktop Chrome/Edge, Firefox, Safari with Space, Arrow, and restart controls.
+- A high-refresh desktop display and a low-power laptop — confirm speed comes from elapsed time, never frame count.
+- Android real phone: no hardware keyboard, repeated on-screen jumps, first-tap audio unlock, rotation, background/foreground cycle.
+- iPhone real device: cold tab start, tap the visual control, confirm the first effect actually plays, then a silent-device path with no broken UI.
+- A tab hidden for thirty seconds, restored — confirm no giant simulation delta or audio burst on return.
+- Full network block before launch for the native version, or after precache install for the web clone — inspect that nothing falls back to the network silently.
+- Fresh profile / cleared site data for the web clone: offline first visit fails honestly, offline repeat launch works after precaching succeeded.
 
-If the mobile test was done with a Bluetooth keyboard attached, you tested a laptop
-with extra steps.
+A mobile test done with a Bluetooth keyboard attached is a laptop test with extra steps.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when content is small, self-contained, and genuinely useful with zero connectivity, when controls reduce to a few local input actions, and when the experience benefits from immediate rendering and short, low-latency effects.
 
-- the content is small, self-contained, and useful even when connectivity is absent,
-- controls can be expressed as a few local input actions,
-- the experience benefits from immediate rendering and short, low-latency effects.
+Skip it when core levels, art, identity, or rules must be fetched live, when the experience needs authoritative multiplayer or server-owned progression, or when nobody's maintaining an offline asset manifest for the website version.
 
-Avoid this pattern when:
+A browser can entertain someone with zero network. A sprite sheet pulled from a CDN is not "basically local," no matter how convincing the demo looked with Wi-Fi on.
 
-- core levels, art, identity, or rules must be fetched live,
-- the experience needs authoritative multiplayer or server-owned progression,
-- the project cannot maintain an offline asset manifest for the website version.
+---
 
-Because yes, a browser can entertain someone with no network.
-And no, a sprite sheet from a CDN is not "basically local."
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Offline media capture and local review workflows**
-(camera input, local encoding, storage pressure, and the awkward moment a user records video with no network at all).
+[1]: Web Audio API design rationale for short effects, [MDN – Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API).
+[2]: Autoplay policy and gesture-unlocked audio graph, [MDN – Web Audio Best Practices](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices), [Chrome for Developers](https://developer.chrome.com/blog/autoplay).
+[3]: General browser autoplay blocking, [MDN – Autoplay guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay).
+[4]: Contexts created outside a gesture starting suspended, [MDN – Web Audio Best Practices](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices).
+[5]: iOS Web Audio gesture restriction detail, [WebKit Bugzilla #149367](https://bugs.webkit.org/show_bug.cgi?id=149367).
+[6]: Service worker precaching for offline web apps, [MDN – Offline and background operation](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation).

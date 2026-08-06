@@ -1,190 +1,124 @@
 # Use Case 12: Local Full-Text Search Over Large Datasets
 
-Most teams hear "search" and immediately draw a server, an API, and a bill that grows with every keystroke.
-That is the lazy default. For notes, logs, catalogs, manuals, and field datasets already on the device, the
-browser can index and search locally with no request leaving the machine.
+"Search" makes most teams draw a server, an API, and a bill that grows with every keystroke. That's the lazy default. For notes, logs, catalogs, and manuals already on the device, the browser can index and search locally with nothing leaving the machine at all.
 
-The hard part is not matching words. The hard part is moving a large index off the main thread, persisting it
-safely, staying inside opaque browser quotas, and not mistaking a WASM demo for a cross-browser storage
-architecture.
+The hard part was never matching words. It's moving a large index off the main thread, persisting it safely, staying inside opaque quotas, and not mistaking a WASM demo on your own laptop for a cross-browser storage architecture.
 
-## Why this is a good next "hard topic"
+## Why 500 Rows and 500,000 Documents Are Different Species
 
-Because a 500-row filter is a `.filter()` call and a 500,000-document offline search engine is not. Once the
-index is large, startup cost, tokenization, worker messaging, durable storage, quota failures, multi-tab
-locking, and browser-specific file I/O decide whether the feature feels native or freezes while the user types
-three letters.
+A 500-row filter is a `.filter()` call. A 500,000-document offline search engine is not, and the difference shows up exactly where startup cost, tokenization, worker messaging, durable storage, quota failures, and multi-tab locking decide whether the feature feels native or freezes after the user types three letters.
 
-## User Story (Abstracted)
+## The User Story, Stripped of Domain
 
-A user can:
-
-- download or create a sizeable local collection of documents or records,
-- search its text without a server round trip,
-- keep searching while offline or on a poor connection,
-- see results ranked and highlighted as they type,
-- close and reopen the browser without rebuilding everything from zero,
+- download or build a sizeable local collection,
+- search its text with zero server round trip,
+- keep searching offline or on a bad connection,
+- see ranked, highlighted results as they type,
+- close and reopen the browser without rebuilding from zero,
 - update or remove local content,
-- and understand when the device no longer has room for the dataset.
+- know when the device is genuinely out of room.
 
-We do not care which corpus. Could be personal notes, product catalogues, diagnostic logs, documentation,
-incident history, or an offline reference library. Same architecture: data, index, worker, durable local
-backing store.
+Personal notes, product catalogs, diagnostic logs, an offline reference library — same architecture: data, index, worker, durable local store.
 
 ## Core Browser Technologies
 
-- `IndexedDB`: durable, transactional browser storage for documents, metadata, index segments, import
-  checkpoints, and a baseline persistence option.
-- `Origin Private File System` (OPFS): origin-scoped private file storage for larger database files and
-  byte-oriented indexes.
-- `FileSystemSyncAccessHandle`: synchronous read/write handle for an OPFS file inside a Dedicated Worker; a
-  useful fit for SQLite-style file I/O.
-- `Web Workers`: isolate tokenization, indexing, ranking, snippets, and WASM execution from the UI thread.
-- `WebAssembly` (optional): runs a compiled search engine or SQLite with FTS, rather than reimplementing a
-  database in JavaScript out of optimism.
-- `SQLite compiled to WASM` (optional): provides transactions, query planning, and full-text search when its
-  database file is backed by a compatible VFS.
-- `StorageManager` (`navigator.storage.estimate()` / `.persist()`): measure space, request persistence where
-  justified, and handle quota failure.
-- `BroadcastChannel` or `Web Locks API` (recommended): coordinate imports, re-indexing, and a single writer
-  across tabs.
+| API | Job | Reference |
+|---|---|---|
+| IndexedDB | Durable, transactional storage for documents and index segments | — |
+| Origin Private File System (OPFS) | Origin-scoped private file storage for larger database files | — |
+| `FileSystemSyncAccessHandle` | Synchronous OPFS I/O inside a Dedicated Worker — SQLite's natural fit | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle) |
+| Web Workers | Isolate tokenization, indexing, ranking, WASM from the UI thread | — |
+| WebAssembly | A compiled search engine or SQLite+FTS instead of reinventing a database in JS out of optimism | — |
+| `StorageManager` | `estimate()`, `persist()`, and handling the quota failure that eventually arrives | — |
+| BroadcastChannel / Web Locks | Coordinate imports and a single writer across tabs | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+IndexedDB gets you durable local data. OPFS plus a Worker gets you database-shaped performance. Quotas get to veto both, on every platform.
 
-- Chromium (Chrome, Edge, Arc): the strongest path for a Worker-backed OPFS database. A sync access handle is
-  deliberately limited to Dedicated Workers and is intended for large file updates such as SQLite
-  modifications ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle)).
-  Chromium's per-origin storage ceiling can be up to 60% of total disk, but that is a quota calculation, not a
-  promise of free space
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria)).
-- Firefox: OPFS has been available since Firefox 111 ([Mozilla developer
-  platform](https://groups.google.com/a/mozilla.org/g/dev-platform/c/dsRxP4liTek)). Its best-effort quota is
-  capped by the smaller of 10% of disk or 10 GiB for the eTLD+1 group; persistent storage has different limits
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria)).
-- Safari (macOS): WebKit made OPFS available from macOS 12.2, including the Worker-only synchronous access
-  handle
-  ([WebKit](https://webkit.org/blog/12257/the-file-system-access-api-with-origin-private-file-system/)). The
-  async API is still the main-thread path. Put the search engine in a Dedicated Worker and make its
-  initialization/progress UI unglamorous but real.
+Chromium is the strongest path for a Worker-backed OPFS database — the sync access handle is deliberately scoped to Dedicated Workers, built for exactly this kind of large file update.<sup>[1]</sup> Its per-origin ceiling can reach up to 60% of total disk, which is a quota calculation, not a promise of actual free space.<sup>[2]</sup>
 
-### Mobile
+Firefox has had OPFS since version 111.<sup>[3]</sup> Its best-effort quota caps at the smaller of 10% of disk or 10 GiB per eTLD+1 group — persistent storage has its own separate limits.<sup>[2]</sup>
 
-- Android Chromium: feature-detect the same Worker + OPFS route, then reduce default corpus size and batch
-  length for weaker CPUs and tighter free disk. Chrome for Android is listed as supporting OPFS
-  ([caniuse](https://caniuse.com/wf-origin-private-file-system)); a large import can still run into quota or
-  process death on an actual phone.
-- iOS Safari / WebKit-based browsers: OPFS has been available from iOS 15.2 according to WebKit
-  ([WebKit](https://webkit.org/blog/12257/the-file-system-access-api-with-origin-private-file-system/)), but
-  storage is not an entitlement.
-  - WebKit's implementation documentation specifically flags OPFS as unavailable in Safari Private Browsing
-    mode
-    ([WebKit](https://webkit.org/blog/12257/the-file-system-access-api-with-origin-private-file-system/)).
-    Treat private mode as a separate capability test, not a smaller quota tier.
-  - Safari's quota varies by context; from macOS 14/iOS 17, a browser origin is generally allocated about 20%
-    of disk, while a Home Screen/Dock web app can receive about 60%, with overall limits too
-    ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria)).
+Safari made OPFS available from macOS 12.2, including the Worker-only sync access handle.<sup>[4]</sup> The async API is still the main-thread path — put the engine in a Dedicated Worker and make the init/progress UI unglamorous but honest.
 
-Short version: IndexedDB gets you durable local data. OPFS plus a Worker gets you database-shaped performance.
-Quotas get to veto both.
+**iOS has two traps stacked on top of each other.** OPFS has existed since iOS 15.2, but WebKit's own documentation flags it as unavailable in Safari Private Browsing mode — treat private mode as a separate capability test, not a smaller quota tier of the same thing.<sup>[4]</sup> And from macOS 14/iOS 17, a regular browser origin gets roughly 20% of disk while a Home Screen/Dock web app can get roughly 60%, with its own overall ceiling on top.<sup>[2]</sup> Two different apps, two different storage budgets, same origin.
 
-## What Usually Breaks First
+## What Breaks First
 
-- Building the full-text index on the main thread and calling the resulting freeze "initialization."
-- Storing a 2 GB corpus because `navigator.storage.estimate()` looked generous on one developer laptop.
-- Treating best-effort storage as a backup strategy. It is not.
-- Opening the same OPFS-backed SQLite database from two tabs and discovering the exclusive file lock during a
-  customer demo.
-- Sending every document body across `postMessage()` for every keystroke instead of retaining the index inside
-  the Worker.
-- Re-indexing the whole corpus after a one-document edit because incremental deletion was left for later.
-- Assuming WebAssembly means identical speed everywhere. WebAssembly is portable, but startup, Worker
-  scheduling, disk I/O, quota headroom, and CPU still belong to the browser and device.
-- Supporting old Safari with the same SQLite OPFS VFS: SQLite's own current documentation calls Safari
-  versions below 17 incompatible with that VFS ([SQLite](https://sqlite.org/wasm/doc/trunk/persistence.md)).
+- Building the index on the main thread and calling the resulting freeze "initialization."
+- Storing a 2 GB corpus because `estimate()` looked generous on one developer laptop.
+- Treating best-effort storage as a backup strategy. It was never that, and it says so in the name.
+- Opening the same OPFS-backed SQLite database from two tabs and discovering the exclusive file lock live, during a customer demo.
+- Sending every document body across `postMessage()` on every keystroke instead of keeping the index resident inside the Worker where it belongs.
+- Re-indexing the entire corpus after a single document edit because incremental deletion got left for "later."
+- Assuming WebAssembly means identical speed everywhere. WASM is portable — startup, Worker scheduling, disk I/O, quota headroom, and raw CPU still belong to the specific browser and device.
+- Shipping the SQLite OPFS VFS to older Safari — SQLite's own documentation calls Safari versions below 17 incompatible with it.<sup>[5]</sup>
 
-The index is local. The performance budget is still painfully physical.
+The index is local. The performance budget is still painfully, physically real.
 
 ## Minimal Technical Blueprint
 
-1. Define the offline corpus boundary and a storage budget before importing: document count, raw bytes, index
-   bytes, preview cache, and a reserve for updates.
-2. On startup, call `navigator.storage.estimate()` and record actual usage; request
-   `navigator.storage.persist()` only when the collection is important enough to justify it.
-3. Store source documents and import metadata in IndexedDB so every import is resumable, inspectable, and
-   independently versioned.
-4. Start a Dedicated Worker that owns tokenization, index construction, query execution, ranking, and
-   snippets. The UI sends a query and gets compact result records back, not an entire corpus boomerang.
-5. Use an IndexedDB-backed inverted index for the broadly compatible path, or put an SQLite/WASM database or
-   binary index in OPFS for the enhanced path.
-6. If using OPFS sync I/O, open `createSyncAccessHandle()` only inside that Dedicated Worker, flush
-   predictable checkpoints, and close/release it when the worker or task stops.
-7. Serialize writers across tabs with a lock or coordinator; let readers use a versioned snapshot rather than
-   racing an index rebuild.
-8. Index in batches, persist a checkpoint after each batch, and expose import progress plus a cancel/retry
-   path.
-9. Benchmark cold start, first query, repeated query, bulk import, update, and deletion on each target browser
-   and real mobile device before choosing the default backend.
+```javascript
+// Inside the Dedicated Worker — the index never leaves this scope
+let syncHandle;
 
-## Compatibility Strategy (Pragmatic)
+async function openIndex() {
+  const root = await navigator.storage.getDirectory();
+  const fileHandle = await root.getFileHandle('search.db', { create: true });
+  syncHandle = await fileHandle.createSyncAccessHandle(); // Worker-only, sync
+}
 
-- Baseline mode (all modern browsers): IndexedDB stores the corpus and a compact JavaScript/Worker inverted
-  index; cap corpus size, search in batches, and allow the user to remove downloaded data.
-- Enhanced mode (supporting browsers): a Dedicated Worker uses OPFS and a synchronous access handle for
-  SQLite/WASM or another byte-oriented index. WebAssembly itself is established across browsers, but test the
-  exact engine and VFS rather than assuming the native-looking demo carries over
-  ([MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)).
+self.onmessage = ({ data }) => {
+  const results = queryIndex(syncHandle, data.query); // compact records back
+  self.postMessage({ results }); // never the whole corpus, ever
+};
+```
 
-The baseline is not a toy. It is the answer for datasets that do not deserve a portable database engine.
+1. Define the offline corpus boundary and storage budget before importing anything: document count, raw bytes, index bytes, preview cache, and a reserve for updates.
+2. On startup, call `estimate()` and log actual usage; request `persist()` only when the collection genuinely earns it.
+3. Store source documents and import metadata in IndexedDB so every import is resumable, inspectable, independently versioned.
+4. Start a Dedicated Worker owning tokenization, index construction, query execution, ranking, and snippets. The UI sends a query and gets back compact results — never a corpus boomerang.
+5. IndexedDB-backed inverted index for the broadly compatible baseline; SQLite/WASM or a binary index in OPFS for the enhanced path.
+6. If using OPFS sync I/O, open `createSyncAccessHandle()` only inside that Dedicated Worker, flush predictable checkpoints, close it when the task ends.
+7. Serialize writers across tabs with a lock or coordinator; let readers use a versioned snapshot instead of racing an index rebuild.
+8. Index in batches, checkpoint after each, expose import progress with a real cancel/retry path.
+9. Benchmark cold start, first query, repeated query, bulk import, update, and deletion on every target browser *and* a real mobile device before picking a default backend.
 
-## Security and Compliance Notes
+## Compatibility Strategy
 
-- Local does not mean harmless. Notes, logs, search terms, and snippets can be sensitive even when they never
-  leave the origin.
-- Encrypt application payloads before writing them if the threat model requires protection from another user
-  of the same unlocked device; browser storage is not a substitute for device security.
-- Provide clear "remove offline data" and logout behavior, including index files, raw documents, previews, and
-  worker caches.
-- Do not present persistence as a retention guarantee. Browser quota and user clearing controls can still
-  remove stored data
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria)).
-- Keep imports and search local by default; make any cloud sync or telemetry a separately explained choice.
+**Baseline:** IndexedDB storing the corpus and a compact JS/Worker inverted index; cap corpus size, search in batches, let users remove downloaded data. Not a toy — the correct answer for datasets that don't deserve a portable database engine.
+
+**Enhanced:** a Dedicated Worker running OPFS plus a sync access handle for SQLite/WASM or another byte-oriented index. WebAssembly itself is well-established, but test the exact engine and VFS — a demo carrying over cleanly is not a guarantee.
+
+## Security and Compliance
+
+Local doesn't mean harmless. Notes, logs, search terms, and snippets can be sensitive even when they never leave the origin. Encrypt payloads before writing if the threat model includes another user on the same unlocked device — browser storage is not device security. Provide a real "remove offline data" and logout path covering index files, raw documents, previews, and worker caches, all of it. Never present persistence as a retention guarantee — browser quota policy and the user's own "clear data" button can both remove stored data at any time.<sup>[2]</sup> Keep imports and search local by default; make any cloud sync a separately explained, separately consented choice.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge: large import, cold reload, repeated query, update, and second-tab-open test against the
-  real OPFS database.
-- Firefox latest: IndexedDB baseline and OPFS-enhanced path, including a quota failure rather than just the
-  roomy developer profile.
-- Safari macOS latest: Worker startup, OPFS initialization, long import, and index recovery after closing the
-  tab mid-batch.
-- Android Chrome on a mid-range physical device: no network, low free storage, app switch during index
-  construction, and a corpus large enough to hurt.
-- iOS Safari on a physical phone: regular browsing and Private Browsing as separate tests, then a Home Screen
-  web app if the product supports it.
-- Storage pressure: fill available quota deliberately, verify `QuotaExceededError` handling, and prove that
-  source documents and index checkpoints remain consistent.
-- Performance: record cold start, first query, p95 query, bulk import, and incremental update separately for
-  Chromium, Firefox, and Safari.
+- Desktop Chrome/Edge: large import, cold reload, repeated query, update, second-tab-open against the real OPFS database.
+- Firefox: IndexedDB baseline and OPFS-enhanced path, including an actual quota failure, not just the roomy developer profile.
+- Safari macOS: Worker startup, OPFS init, a long import, index recovery after closing the tab mid-batch.
+- Android real device, mid-range: no network, low free storage, app-switch mid-index, a corpus large enough to actually hurt.
+- iOS real device: regular browsing and Private Browsing as genuinely separate tests, plus a Home Screen web app if the product supports one.
+- Storage pressure: fill quota deliberately, verify `QuotaExceededError` handling, confirm source documents and checkpoints stay consistent through it.
+- Performance: cold start, first query, p95 query, bulk import, incremental update — recorded separately for Chromium, Firefox, and Safari, not averaged into one comforting number.
 
-If the benchmark runs once on a plugged-in desktop with an empty profile, you measured optimism, not offline search.
+A benchmark that runs once on a plugged-in desktop with an empty profile measured optimism. Not offline search.
 
 ## Decision Summary
 
-Use this pattern when:
-- users repeatedly search a sizeable local corpus and server latency or connectivity is unacceptable,
-- the dataset can be downloaded, created, or retained safely on the device,
-- the product can fund storage lifecycle, worker, and multi-tab engineering.
+Use this when users repeatedly search a sizeable local corpus and server latency or connectivity genuinely isn't acceptable, when the dataset can be safely downloaded or created on-device, and when the product can fund storage lifecycle, worker, and multi-tab engineering as real line items.
 
-Avoid this pattern when:
-- the corpus is small enough for an in-memory filter,
-- the search result must use fresh server-only data or organization-wide access controls on every query,
-- locally retained content is too sensitive for the device and deployment model.
+Skip it when the corpus is small enough for an in-memory filter, when results must reflect fresh server-only data or org-wide access control on every query, or when locally retained content is simply too sensitive for the device and deployment model in play.
 
-Because yes, this is search without a server request. No, it is not serverless operations. You moved some of them into the browser.
+Search without a server request, yes. Serverless operations, no — you just moved some of them into the browser, and they still need owning.
 
-## Next Logical Topic
+---
 
-After this, the best follow-up is: **Local AI-assisted retrieval without sending the corpus away**
-(embeddings, vector indexes, model downloads, and why "offline AI" starts with storage, not demos).
+[1]: `FileSystemSyncAccessHandle` scope, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemSyncAccessHandle).
+[2]: Storage quota and eviction criteria across browsers, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+[3]: Firefox 111 OPFS availability, [Mozilla dev-platform](https://groups.google.com/a/mozilla.org/g/dev-platform/c/dsRxP4liTek).
+[4]: Safari OPFS availability and Private Browsing limitation, [WebKit Blog](https://webkit.org/blog/12257/the-file-system-access-api-with-origin-private-file-system/).
+[5]: SQLite OPFS VFS Safari version requirement, [SQLite WASM docs](https://sqlite.org/wasm/doc/trunk/persistence.md).

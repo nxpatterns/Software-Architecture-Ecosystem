@@ -1,147 +1,119 @@
-# Use Case 07: Browser Background Execution and Scheduling Limits
+# Use Case 18: Browser Background Execution and Scheduling Limits
 
-Everyone says they want background processing.
-Then they discover that "background" means ten different things across ten browser/platform combinations.
+Everyone wants "background processing." Then they discover background means ten different things across ten browser/platform combinations, and roughly six of those combinations mean "no."
 
-This use case covers browser-side background behavior:
-push-triggered work, delayed sync, periodic updates, and what really happens when tabs are hidden, suspended, or killed.
+This covers browser-side background behavior: push-triggered work, deferred sync, periodic updates, and what genuinely happens when a tab is hidden, suspended, or killed outright by an operating system that has better things to do with its battery budget.
 
-## Why this is a proper "hard topic"
+## Why Teams Design This Like a Server Daemon and Regret It
 
-Because teams design background logic like they are writing a server daemon.
-A browser is not a daemon.
-It is a guest process with strict budget, lifecycle constraints, and platform-specific throttling rules.
+A browser is not a daemon. It's a guest process running under a strict budget, real lifecycle constraints, and platform-specific throttling rules nobody asked your product manager's permission to enforce.
 
-Desktop gives you false confidence.
-Mobile gives you the bill.
+Desktop gives you false confidence. Mobile gives you the bill.
 
-## User Story (Abstracted)
-
-A user can:
+## The User Story, Stripped of Domain
 
 - close or background the app,
 - still receive relevant updates or notifications,
-- have pending client work synchronized when possible,
-- and reopen the app without data loss or weird state divergence.
+- have pending client work sync when the platform allows it,
+- reopen the app with no data loss and no weird state divergence.
 
-Could be messaging, workflow approvals, field data sync, reminders, queue processing, incident response dashboards.
-Same architecture pattern.
-Different lifecycle traps.
+Messaging, workflow approvals, field data sync, reminders, incident dashboards — same architecture, different lifecycle traps waiting in each one.
 
 ## Core Browser Technologies
 
-- Service Worker: event-driven background execution entry point.
-- Push API: delivery trigger from server to browser client.
-- Notifications API: user-visible notification surface.
-- Background Sync API: deferred one-off synchronization where supported.
-- Periodic Background Sync API (limited support): scheduled sync attempts.
-- IndexedDB: persistent queue/state for resumable work.
-- Cache Storage API: offline shell and deterministic startup assets.
-- Page Visibility API: adapt behavior on foreground/background transitions.
+| API | Job | Reference |
+|---|---|---|
+| Service Worker | Event-driven background execution entry point | — |
+| Push API | Server-to-browser delivery trigger | — |
+| Notifications API | The user-visible surface for that trigger | — |
+| Background Sync API | Deferred one-off sync — Chromium only | [caniuse](https://caniuse.com/background-sync) |
+| Periodic Background Sync | Scheduled sync attempts, narrower support still | — |
+| IndexedDB | Persistent queue/state for resumable work | — |
+| Cache Storage API | Offline shell, deterministic startup assets | — |
+| Page Visibility API | Behavior changes on foreground/background transitions | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+If your architecture assumes guaranteed periodic background jobs on every mobile browser, your architecture is fan fiction.
 
-- Chromium: strongest practical support for service-worker-based background workflows.
-- Firefox: solid service worker fundamentals, with differences in specific background features.
-- Safari (macOS): supports key pieces but with stricter behavior and more conservative assumptions required.
+Background Sync is the clearest example of the whole problem: Chromium supports it — Chrome, Edge, Opera, Samsung Internet — and Firefox and Safari, desktop and iOS both, do not support it at all.<sup>[1]</sup> Not "support it partially." Not "behind a flag." Absent. Mozilla has it filed as worth prototyping, which in standards-speak means don't wait for it.
 
-### Mobile
+Chromium has the strongest practical support for service-worker-based background workflows generally. Firefox has solid service worker fundamentals with real gaps in specific background features — Background Sync chief among them. Safari supports the core pieces with the most conservative lifecycle assumptions of the three, and expects your code to match that conservatism rather than fight it.
 
-- Android Chromium: workable for selected background patterns.
-- iOS Safari/WebKit: hard constraints.
-  - Background execution windows are limited.
-  - Task timing is less predictable.
-  - Some APIs are partial, version-dependent, or effectively unavailable for your expected pattern.
+Android Chromium is workable for selected background patterns, still subject to OS-level battery and process-management decisions your JavaScript has no visibility into. iOS Safari has hard constraints across the board: background execution windows are short, task timing is unpredictable, and several of these APIs are partial, version-gated, or simply not there for the pattern you had in mind.
 
-Short version:
-If your architecture assumes guaranteed periodic background jobs on every mobile browser,
-your architecture is fan fiction.
+## What Breaks First
 
-## What Usually Breaks First
+- Assuming background sync exists everywhere. It exists in one browser family.<sup>[1]</sup>
+- Assuming push arrival implies an immediate window for heavy processing. It implies an event fired — nothing about its duration or resources is guaranteed.
+- Relying on frequent periodic tasks in a restricted mobile environment that was never going to honor the interval you asked for.
+- Keeping volatile in-memory queue state instead of durable persistence — the process backing that memory can simply end.
+- Ignoring idempotency and replay safety for retried background jobs, then being surprised when a flaky connection double-processes something expensive.
+- Designing a notification flow with no permission-denied fallback UX, as if "denied" were a hypothetical outcome instead of the common one.
 
-- Assuming background sync exists everywhere.
-- Assuming push arrival implies immediate heavy processing opportunity.
-- Relying on frequent periodic tasks in restricted mobile environments.
-- Keeping volatile in-memory queue state instead of durable persistence.
-- Ignoring idempotency and replay safety for retried background jobs.
-- Designing notification flows without permission-denied fallback UX.
-
-Background reliability is earned with defensive design, not with optimism.
+Background reliability is earned through defensive design. It is never earned through optimism, no matter how confident the architecture diagram looked in the planning meeting.
 
 ## Minimal Technical Blueprint
 
-1. Model all background tasks as resumable jobs:
-   - unique job id,
-   - payload reference,
-   - retry metadata,
-   - idempotency key.
-2. Persist job queue and state transitions in IndexedDB.
-3. Use service worker events only as triggers, not guaranteed compute windows.
-4. Keep background handlers short and deterministic.
-5. Defer heavy operations to foreground continuation when needed.
-6. Implement robust retry strategy:
-   - exponential backoff,
-   - max retry budget,
-   - poison-job handling.
-7. Build permission-aware notification UX:
-   - granted path,
-   - denied path,
-   - quiet mode path.
-8. Reconcile queue and server state on next foreground launch.
+```javascript
+// Service worker: triggers are opportunities, not compute guarantees
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'queue-flush') {
+    event.waitUntil(flushQueueWithBackoff()); // short, deterministic, resumable
+  }
+});
 
-## Compatibility Strategy (Pragmatic)
+async function flushQueueWithBackoff() {
+  const jobs = await readPendingJobs(); // from IndexedDB, never from memory
+  for (const job of jobs) {
+    if (job.retryCount > MAX_RETRIES) { await markPoisoned(job); continue; }
+    try { await sendJob(job); await markComplete(job); }
+    catch { await scheduleRetry(job, exponentialDelay(job.retryCount)); }
+  }
+}
+```
 
-- Baseline mode (all modern browsers):
-  - offline queue persistence,
-  - foreground resume sync,
-  - optional notifications where permitted.
-- Enhanced mode (supporting environments):
-  - push-triggered sync acceleration,
-  - background sync optimizations,
-  - richer task orchestration.
+1. Model every background task as a resumable job: unique job ID, payload reference, retry metadata, idempotency key.
+2. Persist the job queue and every state transition in IndexedDB — never trust memory to survive between events.
+3. Treat service worker events strictly as triggers, not guaranteed compute windows. The browser can end the process the moment the handler returns.
+4. Keep background handlers short and deterministic. Long-running logic belongs in foreground continuation, not a background event handler hoping for extra time.
+5. Build a real retry strategy: exponential backoff, a maximum retry budget, explicit poison-job handling instead of an infinite retry loop nobody notices until it's expensive.
+6. Build permission-aware notification UX with three real paths: granted, denied, and a quiet mode for users who granted permission but don't want every event to interrupt them.
+7. Reconcile queue and server state on every foreground launch — the queue's local view is a guess until it's checked against the source of truth.
 
-Never make business correctness depend on enhanced mode.
-Correctness belongs to baseline.
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** offline queue persistence, foreground-resume sync, notifications where explicitly permitted. This is the layer business correctness lives on.
 
-- Push payloads should avoid sensitive raw data where possible.
-- Validate all queued actions server-side regardless of client state.
-- Enforce strict origin integrity for service worker scope.
-- Provide user controls for notification preferences and local data retention.
-- Document background behavior clearly for privacy and compliance review.
+**Enhanced:** push-triggered sync acceleration, Background Sync optimizations where the browser actually supports it, richer task orchestration.
 
-A silent background feature without governance becomes a loud audit finding.
+Never make business correctness depend on the enhanced layer. Correctness belongs to baseline, full stop — the enhanced layer only ever makes baseline feel faster.
+
+## Security and Compliance
+
+Keep push payloads free of sensitive raw data wherever possible — a payload sitting in a push service is not your access-controlled infrastructure. Validate every queued action server-side regardless of what the client believes its own state to be. Enforce strict origin integrity for service worker scope; a service worker with too broad a scope is a persistent problem, not a convenience. Give users real controls over notification preferences and local data retention, and document background behavior clearly for whoever runs the privacy and compliance review — a silent background feature with no documentation is exactly the kind of thing that becomes a loud audit finding.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome, Firefox, Safari with real push endpoints.
-- Android device tests for suspend/resume and network transitions.
-- iOS Safari tests on real devices across at least two major versions.
-- Notification permission paths: granted, denied, default.
-- Airplane mode / reconnect sequences.
+- Desktop Chrome, Firefox, Safari against real push endpoints, not a mocked service.
+- Android device: suspend/resume cycles and network transitions, deliberately triggered.
+- iOS Safari on real devices, across at least two major iOS versions.
+- Notification permission paths: granted, denied, default — all three, not just the happy one.
+- Airplane mode and reconnect sequences.
 - Browser restart and crash-recovery queue reconciliation.
 - Time-skew and delayed-delivery simulations.
-- Long-run retry storm scenarios to validate idempotency and backoff.
+- A long-run retry storm to actually validate idempotency and backoff under load, not just in theory.
 
-If your tests only run in one always-open desktop tab,
-you tested a fantasy environment.
+Tests that only run in one always-open desktop tab tested a fantasy environment, not the product.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when users genuinely expect asynchronous continuity, when delayed sync and alerts carry real operational value, and when the team can engineer for lifecycle unpredictability as a first-class constraint rather than an afterthought.
 
-- users expect asynchronous continuity,
-- delayed sync and alerts have real operational value,
-- team can engineer for lifecycle unpredictability.
+Don't overpromise when mobile Safari parity is mandatory for every background capability on the list, when strict reliability SLAs demand daemon-like guarantees a browser was never built to provide, or when nobody's investing in queue correctness and replay safety as real engineering work.
 
-Avoid overpromising when:
+Browsers can do meaningful background work. They do it on their own negotiated terms — not your sprint plan's.
 
-- mobile Safari parity is mandatory for all background capabilities,
-- strict reliability SLAs require daemon-like guarantees,
-- team cannot invest in queue correctness and replay safety.
+---
 
-Because yes, browsers can do meaningful background work.
-But they do it on negotiated terms, not your sprint plan.
+[1]: Background Sync API browser support, [caniuse](https://caniuse.com/background-sync).

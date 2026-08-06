@@ -1,189 +1,119 @@
 # Use Case 11: Keeping the Screen Awake During a Task
 
-Most teams assume a visible timer, recipe, workout, or checklist is enough to
-keep the screen awake. It is not. The operating system sees an idle screen,
-not your very important countdown, and does exactly what it was built to do.
+A visible timer, recipe, or checklist feels like enough to keep a screen awake. It isn't. The operating system sees an idle screen, not your very important countdown, and does exactly what it was built to do — dim it, then lock it.
 
-This use case is about asking the browser for a real screen wake lock while a
-user is actively in a task, then surviving the moment that request is refused,
-revoked, or lost with the tab's visibility.
+This is about asking the browser for a real screen wake lock while a user is actively mid-task, and surviving the moment that request gets refused, revoked, or quietly lost the instant the tab's visibility changes.
 
-## Why this is a good next "hard topic"
+## Why One Line of Code Isn't the Feature
 
-Because `navigator.wakeLock.request('screen')` looks like one line of code.
-The production version is a small lifecycle manager with user intent, battery
-behavior, visibility changes, release events, and an honest fallback when the
-platform says no.
+`navigator.wakeLock.request('screen')` reads like a single call. The production version is a small lifecycle manager juggling user intent, battery behavior, visibility changes, release events, and an honest fallback for the moment the platform just says no.
 
-## User Story (Abstracted)
+## The User Story, Stripped of Domain
 
-A user can:
-
-- start a task that needs the screen to stay readable without constant taps,
-- keep following instructions, watching a timer, or checking a live status,
+- start a task that needs the screen readable without constant taps,
+- keep following instructions, a timer, a live status,
 - switch briefly to another app or tab,
-- come back without having accidentally left a permanent lock behind,
-- see whether the screen is currently being kept awake,
-- and explicitly stop the task and return to normal device behavior.
+- come back without an orphaned lock left running in the background,
+- see whether the screen is currently being held awake,
+- explicitly stop and return to normal device behavior.
 
-We do not care which task. Could be a cooking flow, exercise interval, lab
-procedure, navigation aid, inspection checklist, or presentation remote. Same
-contract: awake while it is useful, normal again when it is not.
+Cooking flow, exercise interval, lab procedure, inspection checklist — same contract: awake while useful, normal the moment it isn't.
 
 ## Core Browser Technologies
 
-- `Screen Wake Lock API` (`navigator.wakeLock.request('screen')`): asks the
-  operating system to prevent the screen from dimming or locking while the
-  document is visible.
-- `WakeLockSentinel`: holds the granted lock and emits `release` when the
-  browser or system takes it back.
-- `Page Visibility API` (`visibilitychange`): stops acquisition while hidden
-  and gives the app a reliable moment to request a fresh lock when visible.
-- `Permissions Policy` (`screen-wake-lock`): allows or blocks use of the API,
-  especially when the application is framed.
-- `HTMLMediaElement` / `Web Audio` (last-resort fallback): old silent-video or
-  silent-audio tricks can keep a media session active on some platforms, but
-  they are media playback, not a wake-lock contract.
-- `BroadcastChannel` (optional): keeps task state and awake/not-awake UI
-  coherent when the same task is open in more than one tab.
+| API | Job | Reference |
+|---|---|---|
+| `navigator.wakeLock.request('screen')` | Asks the OS not to dim or lock while the document is visible | — |
+| `WakeLockSentinel` | Holds the granted lock, fires `release` when it's taken back | — |
+| Page Visibility API | Stops acquisition while hidden, reliable reacquire signal on return | — |
+| `Permissions-Policy: screen-wake-lock` | Allows or blocks the API, especially when framed | [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/screen-wake-lock) |
+| Silent media (last resort) | Old-school fallback trick — media playback, not an actual wake-lock contract | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+The API is finally normal everywhere. The document lifecycle is still the part that gets to say no.
 
-- Chromium (Chrome, Edge, Arc): the real API is established; Chrome has
-  supported it since 85 and Chromium Edge since 90
-  ([caniuse](https://caniuse.com/wake-lock)). Treat a rejected request or a
-  later `release` event as normal lifecycle, not as a browser failure.
-- Firefox: this used to be the missing major engine. Firefox 126 added Screen
-  Wake Lock support in May 2024
-  ([Firefox release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/126)); current Firefox is part of the normal API path, not the fallback path.
-- Safari (macOS): Safari has supported Screen Wake Lock from 16.4
-  ([caniuse](https://caniuse.com/wake-lock)). Good. Still request only while
-  the task is actually visible; a lock is not a license to ignore lifecycle.
+Chrome has supported it since version 85, Chromium Edge since 90.<sup>[1]</sup> Firefox — long the missing engine here — added support in Firefox 126, May 2024; current Firefox is on the normal path now, not a fallback branch.<sup>[2]</sup> Safari has had it since 16.4.<sup>[1]</sup>
 
-### Mobile
+**iOS has an extra wrinkle worth knowing before it surprises you in a demo:** Home Screen web apps didn't get working Wake Lock until iOS/iPadOS 18.4 — a separate milestone from the Safari-tab support that arrived in 16.4.<sup>[3]</sup> Test the browser tab and the installed-web-app version separately; assuming they behave the same because they share an engine is exactly the kind of assumption that fails in front of a live audience.
 
-- Android Chromium: Chrome for Android supports Screen Wake Lock, so use the
-  same feature-detected path as desktop Chromium
-  ([caniuse](https://caniuse.com/wake-lock)). Battery saver, low battery, and
-  operating-system policy can still deny or revoke a request.
-- iOS Safari / WebKit-based browsers: Safari on iOS gained the API in 16.4
-  ([caniuse](https://caniuse.com/wake-lock)). Home Screen web apps were a
-  separate wrinkle: WebKit says Wake Lock began working there in iOS and
-  iPadOS 18.4 ([WebKit](https://webkit.org/blog/16574/webkit-features-in-safari-18-4/)). Test the browser tab and the installed-web-app version separately.
-  - A hidden document cannot acquire a lock, and a granted lock may be revoked
-    when the document is no longer active
-    ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WakeLock/request)).
-  - Switching apps, locking the phone, or opening another tab is therefore
-    "pause and reacquire on return," never "continue indefinitely in the
-    background."
+A hidden document cannot acquire a lock, and a granted one can be revoked the moment the document stops being active.<sup>[4]</sup> Switching apps, locking the phone, opening another tab — all of it means "pause and reacquire on return." None of it means "continue indefinitely in the background," no matter how the feature name sounds.
 
-Short version: the API is finally normal. The document lifecycle is still the
-part that gets to say no.
+## What Breaks First
 
-## What Usually Breaks First
+- Calling `request()` once at task start and never listening for `release` — the lock can vanish out from under you with zero warning otherwise.
+- Treating a wake lock as background-execution permission. It isn't, was never advertised as one, and the API name is not an invitation to pretend otherwise.
+- Trying to reacquire while `document.visibilityState === 'hidden'`, which rejects with `NotAllowedError` by design.<sup>[4]</sup>
+- Holding the lock after the timer ends because nobody wired the stop button to `sentinel.release()`.
+- Hiding a looping silent video in the DOM and calling that compatibility. Muted media generally dodges autoplay blocking, but audible media can still require user interaction — and either way, it's a workaround, not the feature.<sup>[5]</sup>
+- Assuming an embedded task can request a lock when the host page's `Permissions-Policy` blocks `screen-wake-lock` outright.<sup>[6]</sup>
 
-- Calling `request()` once at task start and never listening for `release`.
-- Treating a wake lock as a background-execution permission. It is not.
-- Trying to reacquire while `document.visibilityState === 'hidden'`, which can
-  reject with `NotAllowedError` ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WakeLock/request)).
-- Holding the lock after the timer ends because nobody wired the stop button
-  to `sentinel.release()`.
-- Hiding a looping silent video somewhere in the DOM and calling that
-  compatibility. Muted/no-audio media generally avoids autoplay blocking, but
-  audible media can require user interaction
-  ([MDN autoplay guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay)).
-- Assuming an embedded task can request a lock when the host page's
-  `Permissions-Policy` blocks `screen-wake-lock`
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/screen-wake-lock)).
-
-A sleep-prevention hack that works only until the browser updates is not a
-feature. It is a future support ticket wearing a `<video>` tag.
+A sleep-prevention hack that only works until the next browser update isn't a feature. It's a support ticket wearing a `<video>` tag.
 
 ## Minimal Technical Blueprint
 
-1. Make "Keep screen awake" part of an explicit task state, with a visible
-   toggle and a clear stop/end action.
-2. Feature-detect `navigator.wakeLock`; do not infer support from browser
-   name, operating system, or somebody's 2021 compatibility spreadsheet.
-3. When the task is active **and** the document is visible, call
-   `await navigator.wakeLock.request('screen')` inside `try/catch`.
-4. Store the returned `WakeLockSentinel`, render an honest "screen kept awake"
-   status, and attach its `release` listener.
-5. On `release`, clear local state and show the normal task UI; if the task is
-   still active and the document is visible, schedule one controlled retry.
-6. On `visibilitychange`, release any local reference when hidden; when the
-   document returns to `visible`, request a new lock if the task still needs it.
-7. Release the sentinel when the task ends, the user toggles it off, or the
-   route/component is destroyed.
-8. If the API is absent or denied, keep the timer/task functional, offer a
-   conspicuous "keep this screen on" instruction, and optionally offer a
-   user-started muted-media fallback only where its cost is worth it.
+```javascript
+let sentinel = null;
 
-## Compatibility Strategy (Pragmatic)
+async function acquireLock() {
+  if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+  try {
+    sentinel = await navigator.wakeLock.request('screen');
+    sentinel.addEventListener('release', () => { sentinel = null; scheduleRetryIfStillActive(); });
+  } catch { /* denial is a normal lifecycle outcome, not an error state */ }
+}
 
-- Baseline mode (all modern browsers): task timer/instructions work normally,
-  show remaining time and an "avoid locking the screen" hint, and never rely
-  on hidden media or background code for correctness.
-- Enhanced mode (supporting browsers): use Screen Wake Lock while the task is
-  active and visible, surface its current state, and reacquire after a
-  visibility return or `release` event.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && taskIsActive) acquireLock();
+});
+```
 
-The enhancement protects convenience. The baseline protects the task.
+1. Make "keep screen awake" an explicit part of task state, with a visible toggle and a clear stop action.
+2. Feature-detect `navigator.wakeLock`. Never infer support from browser name, OS, or a spreadsheet someone made in 2021.
+3. Request only when the task is active *and* the document is visible, wrapped in `try/catch`.
+4. Store the returned sentinel, render an honest "screen kept awake" indicator, attach the `release` listener.
+5. On `release`, clear local state and revert to normal UI; if the task is still active and visible, schedule one controlled retry — not an infinite loop.
+6. On `visibilitychange`, drop the local reference when hidden; request fresh on return if the task still needs it.
+7. Release the sentinel when the task ends, the user toggles it off, or the component unmounts.
+8. If the API is absent or denied, keep the task fully functional anyway, show a conspicuous "keep this screen on" hint, and only offer a muted-media fallback where its cost is genuinely worth it.
 
-## Security and Compliance Notes
+## Compatibility Strategy
 
-- Use HTTPS. The API is restricted to secure contexts
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API)).
-- Make the state visible and easy to turn off. Keeping a display lit consumes
-  battery, which is user cost rather than your free infrastructure.
-- In an iframe, set `allow="screen-wake-lock"` only for trusted content and
-  keep the site's `Permissions-Policy` intentional
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/screen-wake-lock)).
-- Do not use a silent media fallback to conceal a tracking or playback action.
-  If media is running, make the user-facing reason clear.
+**Baseline:** the timer/task works normally regardless, shows remaining time, hints at avoiding screen lock manually. Never let correctness depend on hidden media or background tricks.
+
+**Enhanced:** Screen Wake Lock while active and visible, current state surfaced honestly, reacquire after visibility return or `release`.
+
+The enhancement protects convenience. The baseline protects the actual task.
+
+## Security and Compliance
+
+HTTPS only — this API is secure-context-restricted by design. Make the awake state visible and trivially easy to turn off; keeping a display lit is real battery cost, not free infrastructure the app gets to spend on the user's behalf without asking. In an iframe, set `allow="screen-wake-lock"` only for trusted content, and keep the site's `Permissions-Policy` deliberate rather than defaulted. Never use a silent-media fallback to quietly conceal a tracking or playback action — if media is running, the user-facing reason needs to be obvious.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge: start a task, change tabs, return, and verify exactly
-  one fresh lock is held.
-- Firefox latest: verify the normal API path, not an old fallback branch.
-- Safari macOS latest: test request, manual stop, and system sleep/display
-  settings rather than only the happy-path page load.
-- Android Chrome on a physical phone: test low battery or battery-saver mode
-  where available, then lock and unlock the device.
-- iOS Safari on a physical phone: test in Safari and, if supported by the
-  product, the Home Screen web app separately.
-- Unsupported/blocked path: disable the API or block it with Permissions
-  Policy and verify that the task remains usable with no fake "awake" badge.
-- Embedded path: test the exact production iframe and host headers.
+- Desktop Chrome/Edge: start, switch tabs, return, confirm exactly one fresh lock is held — not zero, not two.
+- Firefox: confirm the normal API path fires, not a legacy fallback branch left over from before 126.
+- Safari macOS: request, manual stop, actual system sleep/display settings — not just the happy-path load.
+- Android real device: low-battery or battery-saver mode where testable, then lock and unlock the device mid-task.
+- iOS real device: Safari tab and, if the product supports it, the installed Home Screen app, tested separately.
+- Blocked path: disable or Permissions-Policy-block the API, confirm the task stays fully usable with no fake "awake" badge lying to the user.
+- The exact production iframe and host headers, if embedded anywhere.
 
-If the test never leaves the foreground tab, you tested the easy line of code.
-Not the behavior your user will actually hit.
+A test that never leaves the foreground tab tested the easy line of code. Not the behavior your user actually hits.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when a visible, hands-off task is materially worse if the screen sleeps mid-way through, the task has a clear start and stop boundary, and user convenience genuinely outweighs pretending battery isn't a real, finite resource.
 
-- a visible, hands-off task is materially worse if the screen sleeps,
-- the task can express a clear start and stop boundary,
-- user convenience matters more than pretending that device battery is not a
-  real resource.
+Skip it when the work needs to continue unattended after the user switches apps or locks the device — this API flatly does not provide that — when an ordinary screen timeout is harmless, or when the only proposed implementation is a hidden looping media file dressed up as a solution.
 
-Avoid this pattern when:
+The page is active. The operating system is still allowed to have opinions about that, and it will act on them regardless of what your feature is called.
 
-- the work must continue unattended after the user switches apps or locks the
-  device — this API does not provide background execution,
-- a brief, ordinary screen timeout is harmless,
-- the only proposed implementation is a hidden looping media file.
+---
 
-Because yes, the page is active. The operating system is still allowed to have
-opinions about that.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Reliable timers and task state across tab suspension**
-(monotonic clocks, missed intervals, notifications, and why `setInterval()` is
-not a scheduler just because it has a number in its name).
+[1]: Chrome/Edge/Safari Screen Wake Lock support, [caniuse](https://caniuse.com/wake-lock).
+[2]: Firefox 126 Wake Lock support, [MDN Firefox release notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Releases/126).
+[3]: Home Screen web app Wake Lock support, [WebKit Blog – Safari 18.4](https://webkit.org/blog/16574/webkit-features-in-safari-18-4/).
+[4]: Visibility requirement and revocation behavior, [MDN – WakeLock.request()](https://developer.mozilla.org/en-US/docs/Web/API/WakeLock/request).
+[5]: Autoplay and muted-media behavior, [MDN Autoplay guide](https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay).
+[6]: `Permissions-Policy: screen-wake-lock`, [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy/screen-wake-lock).

@@ -1,188 +1,113 @@
 # Use Case 05: In-Browser Audio/Video Recording
 
-Most teams hear “record a quick clip” and picture a red button, a timer, and one blob at the end. That fantasy
-survives exactly until the clip was recorded on Safari, your backend only accepts WebM, or the user expects trimming
-to happen before anything leaves the laptop.
+"Record a quick clip" conjures a red button, a timer, one blob at the end. That fantasy survives exactly until the clip was recorded on Safari, your backend only accepts WebM, and the user expected trimming to happen before anything left the laptop.
 
-This use case makes the browser the recorder, the rough-cut desk, and the first processing stage. No native wrapper.
-No plugin. Just camera, microphone, media formats, and several opportunities to learn what a container actually is.
+This use case makes the browser the recorder, the rough-cut desk, and the first processing stage. No native wrapper, no plugin. Just camera, microphone, media formats, and several opportunities to learn what a container actually is versus what you assumed it was.
 
-## Why this is a good next "hard topic"
+## Why Capture Is Easy and Media Engineering Isn't
 
-Because camera capture is easy to demo and media engineering is not easy to ship. The moment capture, encoding, local
-processing, and cross-browser playback meet, one API turns into an actual pipeline.
+Camera capture demos beautifully. The moment capture, encoding, local processing, and cross-browser playback have to cooperate, one API call turns into an actual pipeline with actual failure modes.
 
-## User Story (Abstracted)
+## The User Story, Stripped of Domain
 
-A user can:
-
-- grant access to a camera and/or microphone,
-- see a local preview before recording,
-- start, pause, resume, and stop a recording,
-- listen to or watch the result locally,
-- trim the useful section or apply simple audio processing,
+- grant camera and/or microphone access,
+- see a local preview before recording starts,
+- start, pause, resume, stop,
+- play back the result locally,
+- trim the useful part or apply light audio processing,
 - discard a bad take,
-- and upload or save only the final media asset.
+- upload only the final asset.
 
-We do not care which recording. Could be a voice note, video response, evidence clip, training submission, or product
-demo. Same pipeline shape.
+Voice note, video response, evidence clip, training submission — same pipeline shape, different stakes.
 
 ## Core Browser Technologies
 
-- `MediaDevices.getUserMedia()`: requests the camera and microphone as a `MediaStream`.
-- `MediaRecorder`: encodes a stream into timed media chunks and final `Blob` output.
-- `MediaRecorder.isTypeSupported()` / `mimeType`: probes a recorder format before asking it to produce files your
-  server cannot use.
-- `MediaStream` / `MediaStreamTrack`: own the live tracks, stop them deliberately, and react when the device or user
-  ends capture.
-- `Web Audio API`: routes microphone audio through gain, mute, analyser, filtering, or an `AudioWorklet` before
-  recording.
-- `AudioContext` / `OfflineAudioContext`: process or render a selected audio segment locally without first shipping
-  raw audio to a server.
-- `WebCodecs` (optional): low-level frame and audio-sample decode/encode for a real local video export path when the
-  runtime supports the required codec.
-- `URL.createObjectURL()` / `Blob`: preview, retain, and upload the captured recording.
+| API | Job | Reference |
+|---|---|---|
+| [`getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia) | Requests camera/mic as a `MediaStream` | MDN |
+| [`MediaRecorder`](https://caniuse.com/mediarecorder) | Encodes a stream into timed chunks and a final `Blob` | caniuse |
+| [`isTypeSupported()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static) | Probes a format before you promise your server can ingest it | MDN |
+| `MediaStream` / `MediaStreamTrack` | Own the live tracks, stop them deliberately | — |
+| Web Audio API | Gain, mute, analysis, filtering before recording | — |
+| `AudioContext` / `OfflineAudioContext` | Local audio processing without a server round-trip | — |
+| WebCodecs (optional) | Frame-accurate local video export, capability-gated | MDN |
+| `URL.createObjectURL()` / `Blob` | Preview, retain, upload | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+Capture is broadly available everywhere. **Recording formats are where the browser personalities show up.** Chromium treats WebM/Opus as a candidate, not a contract — always ask `isTypeSupported()` before committing to an encoder.<sup>[1]</sup> Firefox supports the same capture and recording APIs, with its own accepted MIME set — don't assume Chrome's winning format choice transfers.<sup>[1]</sup> Safari's `MediaRecorder` output is documented by WebKit as MP4 with H.264 video and AAC audio.<sup>[2]</sup> That's the Safari-shaped hole in any "we always get WebM" architecture, and it's not a bug — it's WebKit telling you exactly what it does.
 
-- Chromium (Chrome, Edge, Arc): `getUserMedia()` and `MediaRecorder` are supported; treat WebM/Opus as a candidate,
-  not a contract, and ask `isTypeSupported()` before choosing an encoder
-  ([caniuse–getUserMedia](https://caniuse.com/mdn-api_mediadevices_getusermedia),
-  [caniuse–MediaRecorder](https://caniuse.com/mediarecorder),
-  [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static)).
-- Firefox: supports camera/microphone capture and `MediaRecorder`, but that still does not make its accepted
-  recording formats identical to Chromium or Safari; probe the exact MIME type on the current browser
-  ([caniuse–getUserMedia](https://caniuse.com/mdn-api_mediadevices_getusermedia),
-  [caniuse–MediaRecorder](https://caniuse.com/mediarecorder),
-  [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/mimeType)).
-- Safari (macOS): current Safari supports `MediaRecorder`, but WebKit documents its recorder output as MP4 with
-  H.264 video and AAC audio. That is the Safari-shaped hole in any “we always send WebM/Opus” plan
-  ([caniuse](https://caniuse.com/mediarecorder), [WebKit](https://webkit.org/blog/11353/mediarecorder-api/)).
+Mobile follows the same split: Android Chromium supports capture and recording, constrained by memory, thermals, and backgrounding. iOS Safari supports both too, on the same MP4/H.264/AAC path as desktop Safari.<sup>[2]</sup> Ship a WebM-only upload contract and iPhones will file the bug report for you.
 
-### Mobile
+## What Breaks First
 
-- Android Chromium: camera/microphone capture and `MediaRecorder` are available, but memory, thermal limits, and a
-  backgrounded tab make long, high-bitrate takes a bad product promise
-  ([caniuse–getUserMedia](https://caniuse.com/mdn-api_mediadevices_getusermedia),
-  [caniuse–MediaRecorder](https://caniuse.com/mediarecorder)).
-- iOS Safari / WebKit-based browsers: camera/microphone access and `MediaRecorder` are available in current iOS
-  Safari, but the Safari recorder format is the MP4/H.264/AAC path WebKit documents. Do not ship a WebM-only upload
-  contract and then act surprised by phones
-  ([caniuse–getUserMedia](https://caniuse.com/mdn-api_mediadevices_getusermedia),
-  [caniuse–MediaRecorder](https://caniuse.com/mediarecorder),
-  [WebKit](https://webkit.org/blog/11353/mediarecorder-api/)).
-
-Short version: capture is broadly available. Recording formats are where the browser personalities start showing.
-
-## What Usually Breaks First
-
-- Hardcoding `video/webm;codecs=vp8,opus` or `audio/mp4` before asking what the recorder can actually make.
-  `isTypeSupported()` exists because format support is not a universal promise
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static)).
-- Naming every recorded blob `.webm` because that is what Chrome produced in development, then receiving Safari MP4.
-- Treating a MIME type as a cosmetic string instead of a container-plus-codec compatibility decision. A mismatched
-  codec and container may not play reliably
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/mimeType)).
-- Calling “trim” a UI range selection when users expect a smaller exported file with the unwanted frames physically
-  removed.
-- Doing audio analysis, waveform rendering, and encoding on the main thread, then blaming the camera when the
-  controls freeze.
-- Leaving camera tracks running after cancel, navigation, or an error because nobody gave ownership of
-  `stream.getTracks()` to one lifecycle boundary.
-- Assuming `isTypeSupported()` means the encoder cannot still fail under resource pressure. It only says the user
-  agent should be able to record that format
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static)).
+- Hardcoding `video/webm;codecs=vp8,opus` before asking the recorder what it can actually produce.
+- Naming every blob `.webm` because that's what Chrome made in dev, then receiving Safari's MP4.
+- Treating a MIME string as cosmetic instead of a container-plus-codec contract that determines whether the file plays at all.
+- Calling "trim" a UI range selection when users expect a smaller exported file with the unwanted frames actually gone.
+- Running waveform rendering and encoding on the main thread, then blaming the camera when the controls freeze.
+- Leaving camera tracks running after cancel or error because nobody owns `stream.getTracks()` at a single lifecycle boundary.
+- Reading `isTypeSupported() === true` as a guarantee. It says the browser *should* be able to record that format — not that it will survive resource pressure.<sup>[3]</sup>
 
 ## Minimal Technical Blueprint
 
-1. Serve the recording page over HTTPS, feature-detect `navigator.mediaDevices`, `getUserMedia`, and
-   `MediaRecorder`, and show an explicit unsupported state before the user reaches a broken red button.
-2. On a clear user action, request only the tracks required for this take: audio, video, or both. Keep the returned
-   `MediaStream` in one capture controller, not spread across component state like confetti.
-3. Attach the original stream to a muted local preview. If audio processing is needed, send the microphone track
-   through a `Web Audio` graph and record the graph's destination stream instead of the untouched input.
-4. Build an ordered list of acceptable MIME candidates, call `MediaRecorder.isTypeSupported()` for each, and store
-   the selected type with the recording metadata. Read the recorder's resulting `mimeType`; the browser is allowed
-   to choose its own format when none is requested
-   ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/mimeType)).
-5. Start `MediaRecorder` with bounded chunk intervals, append `dataavailable` blobs as they arrive, and keep a
-   duration counter independent of the browser's event timing.
-6. On stop, join the chunks into a `Blob`, create a local object URL, and let the user replay or reject the take
-   before upload.
-7. Make baseline trimming honest: retain in/out points for preview, and render selected audio through
-   `OfflineAudioContext` when an audio-only export is required. For a frame-accurate video export, use a
-   feature-detected `WebCodecs` path or a server-side transcode; `WebCodecs` codec support is device- and
-   browser-specific ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API)).
-8. Stop every input track, close the audio context if appropriate, revoke discarded object URLs, and persist only
-   the blobs or resumable-upload state you intentionally need.
+```javascript
+const candidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/mp4'];
+const mimeType = candidates.find(t => MediaRecorder.isTypeSupported(t));
+if (!mimeType) return showUnsupportedState();
 
-## Compatibility Strategy (Pragmatic)
+const recorder = new MediaRecorder(processedStream, { mimeType });
+const chunks = [];
+recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+recorder.onstop = () => {
+  const blob = new Blob(chunks, { type: recorder.mimeType }); // trust what it actually produced
+  attachPreview(URL.createObjectURL(blob));
+};
+```
 
-- Baseline mode (all modern recording browsers): camera/microphone capture, a runtime-probed `MediaRecorder` MIME
-  type, local original-blob preview, trim markers, and upload or server-side transcode.
-- Enhanced mode (supporting browsers): `Web Audio` processing, a local audio-only trimmed export, and `WebCodecs`
-  only after capability checks confirm the chosen decoder and encoder. The API deliberately exposes codec support
-  as a per-browser/per-device question, not a wish
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API)).
+1. Feature-detect `mediaDevices`, `getUserMedia`, `MediaRecorder` before the user reaches a broken red button.
+2. On a clear user action, request only the tracks this take needs. Keep the stream in one capture controller.
+3. Route the microphone track through a Web Audio graph if processing is needed, and record the graph's output — not the untouched input.
+4. Build an ordered MIME candidate list, probe with `isTypeSupported()`, store the selected type as metadata, and read back the recorder's actual `mimeType` — the browser may still choose its own.
+5. Start with bounded chunk intervals, append `dataavailable` blobs, track duration independently of event timing.
+6. On stop, join chunks into a `Blob`, create an object URL, let the user reject the take before it ever uploads.
+7. For honest trimming, keep in/out points for preview and render audio-only exports through `OfflineAudioContext`. Frame-accurate video trimming needs a feature-detected WebCodecs path or a server-side transcode.
+8. Stop every track, close the audio context, revoke discarded object URLs, persist only what you intentionally need.
 
-Store the recorded MIME type with the asset. Future-you should not have to infer a container from a filename extension
-and a bad feeling.
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** capture, a runtime-probed `MediaRecorder` format, local original-blob preview, trim markers, upload or server-side transcode.
 
-- `getUserMedia()` is HTTPS-only and requires user permission for camera or microphone input
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
-- Request the minimum capture surface: audio-only should not wake the camera just because a shared component knows
-  how to render video.
-- Make the live/recording state visible, stop tracks on every exit path, and do not keep an invisible microphone
-  session alive between takes.
-- Treat recordings as personal data by default. Define local retention, deletion, access controls, and an explicit
-  upload/consent boundary.
-- If the recorder lives in an iframe, configure Permissions Policy and top-level permission ownership deliberately;
-  an unapproved embedded context cannot simply ask for camera or microphone access
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
+**Enhanced:** Web Audio processing, local audio-only trimmed export, WebCodecs gated behind explicit capability checks — codec support is a per-browser, per-device question, never a wish.
 
-“Local first” does not mean “not sensitive.” It means the sensitive bytes are now sitting on a user device before your
-server has even met them.
+Store the recorded MIME type with the asset. Future-you shouldn't have to guess a container from a file extension and a bad feeling.
+
+## Security and Compliance
+
+`getUserMedia()` is HTTPS-only and permission-gated by design. Request the minimum surface — audio-only shouldn't wake the camera just because a shared component knows how to render video. Make the recording state visibly obvious, stop tracks on every exit path, never leave an invisible mic session alive between takes.
+
+Treat recordings as personal data by default: local retention, deletion, access controls, an explicit upload/consent boundary. "Local first" doesn't mean "not sensitive" — it means the sensitive bytes just landed on a user's device before your server ever met them.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge: record audio-only and camera-plus-mic, then inspect the selected MIME type and play the
-  output outside the app.
-- Firefox latest: repeat the same candidates; do not assume the Chrome choice won the format negotiation.
-- Safari macOS latest: verify the MP4/H.264/AAC intake path and your upload service's validation, not merely the
-  local preview.
-- Android Chromium on a mid-range real device: record a longer take, rotate the device, background the app briefly,
-  then recover cleanly.
-- iOS Safari on a real iPhone: deny permission, allow permission, cancel a take, record a take, and confirm the
-  server accepts the Safari output.
-- Low-storage and low-memory scenarios with multiple takes, discarded blobs, and a slow upload.
-- Audio processing enabled: confirm latency, levels, mute, interruption, and the stop path all release the original
-  microphone tracks.
+- Desktop Chrome/Edge and Firefox: record both modes, inspect the actual selected MIME type, play the output outside the app.
+- Safari macOS: verify the MP4/H.264/AAC path against your upload validation, not just the local preview.
+- Android real device: longer take, rotation, brief backgrounding, clean recovery.
+- iOS real device: deny, allow, cancel, record, confirm the server actually accepts Safari's output.
+- Low-storage, low-memory scenarios with multiple takes and a slow upload.
 
-If your acceptance test is one WebM blob recorded on a developer MacBook, you tested a demo, not a recorder.
+One WebM blob recorded on a developer MacBook is a demo, not a recorder.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when users need to create short audio or video without a native app, when local preview or light processing adds real value, and when the backend can ingest — or transcode — more than one recording format.
 
-- users need to create short audio or video without installing a native app,
-- immediate local preview or simple processing is valuable,
-- your backend can ingest multiple tested recording formats or transcode them.
+Skip it when you need one guaranteed codec from every browser with zero server-side normalization, when frame-perfect editing is core but nobody's funding a real encode pipeline, or when capture must survive a backgrounded, locked phone.
 
-Avoid this pattern when:
+It's a record button. The file it produces is not a universal object, no matter how the demo looked.
 
-- you require one guaranteed codec/container from every browser with no server-side normalization,
-- frame-perfect video editing is the core product but you cannot fund a real encode/mux pipeline,
-- capture must continue reliably while the phone is backgrounded or locked.
+---
 
-Because yes, it is a record button. And no, the file it produces is not a universal object.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Screen sharing and screen recording from the browser**
-(picker-controlled display capture, desktop-only reality, and the part where mobile politely declines the entire
-feature).
+[1]: `getUserMedia`/`MediaRecorder` support and MIME probing, [caniuse – getUserMedia](https://caniuse.com/mdn-api_mediadevices_getusermedia), [caniuse – MediaRecorder](https://caniuse.com/mediarecorder), [MDN – isTypeSupported](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static).
+[2]: Safari `MediaRecorder` output format, [WebKit Blog](https://webkit.org/blog/11353/mediarecorder-api/).
+[3]: `isTypeSupported()` semantics, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static).

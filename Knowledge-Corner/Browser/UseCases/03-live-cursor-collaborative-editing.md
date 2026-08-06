@@ -1,190 +1,139 @@
 # Use Case 03: Live Cursor Presence & Collaborative Editing
 
-Most teams think live collaboration means saving faster.
-Put a WebSocket behind the editor, broadcast each keystroke, and call it
-Google Docs.
+Most teams think "real-time collaboration" means a WebSocket, a broadcast of every keystroke, and a demo where two laptops on the same conference Wi-Fi look like Google Docs.
 
-This use case is the less cute version: several people edit the same document,
-see who is there, see where everyone is typing, and do not corrupt the result
-when messages arrive late, twice, or after a tab wakes up from the dead.
+Then someone closes a laptop. Someone else opens a second tab. A phone locks itself in someone's pocket for ninety seconds. And the demo, which worked beautifully in the room, now has three copies of the same paragraph fighting for the same six words.
 
-## Why this is a good next "hard topic"
+This is the less cute version: several people edit the same document, see who else is there, see where they're typing, and the result doesn't corrupt itself when messages arrive late, arrive twice, or arrive after a tab that was clinically dead for two minutes wakes back up.
 
-Because real-time editing is distributed systems wearing a tiny cursor hat.
-The UI looks obvious; convergence, reconnection, presence expiry, and mobile lifecycle behavior are where the invoice arrives.
+## Why This Is Distributed Systems Wearing a Cursor Hat
 
-## User Story (Abstracted)
+The UI is a colored dot with a name tag. Nobody in a design review has ever flagged "convergence guarantees" as a visual bug. That's exactly the problem — the invoice for this feature doesn't arrive in the UI layer, it arrives in reconnection logic, presence expiry, and what happens to a tab when iOS decides it's done with your JavaScript for a while.
 
-A user can:
+## The User Story, Stripped of Domain
 
 - open a shared document,
-- see other active participants,
-- see their cursors and current selections,
-- type, delete, and format at the same time as other people,
-- briefly lose connectivity,
-- reconnect without overwriting newer work,
-- open a second tab without becoming two different collaborators,
-- and know when another person has left instead of staring at a ghost cursor.
+- see who else is active right now,
+- see their cursors and selections, live,
+- type, delete, and format simultaneously with other people,
+- lose connectivity for a moment,
+- reconnect without stomping on work that happened while you were gone,
+- open a second tab without the system deciding you're now two different people,
+- know when someone actually left, instead of staring at a cursor that's been abandoned for twenty minutes.
 
-We do not care which document.
-Could be a note, a specification, a checklist, a design brief, or a shared
-incident timeline. Same concurrency problem.
+Swap "document" for a spec, a checklist, a design brief, an incident timeline. Same concurrency problem wearing a different hat.
 
 ## Core Browser Technologies
 
-- `WebSocket`: durable client-to-server transport for document operations,
-  presence, acknowledgements, and resync requests.
-- `WebRTC` / `RTCDataChannel` (optional): peer-to-peer low-latency transport
-  for small, ephemeral presence signals when the topology justifies it.
-- `CRDT` or Operational Transformation (OT): deterministic merge model for
-  concurrent document changes; this is the part that makes "simultaneous"
-  mean something.
-- `Presence / Awareness protocol`: short-lived state for user identity,
-  cursor, selection, colour, and last-seen time; not document content.
-- `BroadcastChannel`: same-origin coordination between tabs so one browser
-  identity is not blindly duplicated.
-- `IndexedDB`: persist the local replica, unsent operations, and last known
-  server checkpoint.
-- `Page Visibility API`: treat hidden and resumed pages as lifecycle events,
-  not as a surprising absence of heartbeats.
-- `Web Crypto API` (recommended): protect locally persisted document data and
-  authenticate encrypted payloads where the product requires it.
+| API / Concept | Job | Reference |
+|---|---|---|
+| [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) | Durable client-server transport for operations, presence, acks, resync requests | MDN |
+| [RTCDataChannel](https://caniuse.com/mdn-api_rtcdatachannel) (optional) | Peer-to-peer low-latency transport for small, disposable presence signals | caniuse |
+| CRDT / Operational Transformation | The deterministic merge model that makes "simultaneous" mean something instead of "whoever's packet arrived last wins" | — |
+| Presence / awareness protocol | Short-lived state — identity, cursor, selection, color, last-seen — kept explicitly separate from document content | — |
+| [BroadcastChannel](https://caniuse.com/mdn-api_broadcastchannel_broadcastchannel) | Same-origin tab coordination so one human doesn't accidentally become three collaborators | caniuse |
+| [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) | Local replica, unsent operation queue, last known server checkpoint | MDN |
+| [Page Visibility API](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API) | Treats hidden/resumed pages as lifecycle events, not mysterious silence | MDN |
+| [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) | Protects the locally persisted replica where the product needs it | MDN |
 
-## Browser Reality Check
+For the PMs: row three, the CRDT, is the whole feature. Everything else is plumbing around it. For the specialists: yes, we know OT exists too — pick one, this deck isn't the place to relitigate that argument.
 
-### Desktop
+## The Browser Reality Check
 
-- Chromium (Chrome, Edge, Arc): `WebSocket`, `RTCDataChannel`, and the
-  `BroadcastChannel` coordination path are available, so the full transport
-  menu exists ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API), [caniuse](https://caniuse.com/mdn-api_rtcdatachannel), [caniuse](https://caniuse.com/mdn-api_broadcastchannel_broadcastchannel)).
-  That does not make a peer connection a free reliability upgrade. Keep the
-  server-backed sync path authoritative.
-- Firefox: supports the same core transports ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API), [caniuse](https://caniuse.com/mdn-api_rtcdatachannel)).
-  For data channels, do not guess at a universal large-message limit: MDN
-  documents that user agents can behave differently, including Chrome/Firefox
-  combinations ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels)).
-- Safari (macOS): has the core `RTCDataChannel` capability too
-  ([caniuse](https://caniuse.com/mdn-api_rtcdatachannel)). Use the same small,
-  idempotent operation envelopes as everywhere else; a green support square
-  is not an end-to-end delivery guarantee.
+**Desktop.** Chromium, Firefox, and Safari all support the core transport pair — WebSocket and RTCDataChannel.<sup>[1]</sup> A green support square is not an end-to-end delivery guarantee, and for data channels specifically, MDN documents that user agents disagree on message-size behavior, including between Chrome and Firefox.<sup>[2]</sup> Don't assume a peer connection is a free reliability upgrade over your server path — it's an optimization, and the server-authoritative sync path stays the source of truth regardless of what the P2P layer is doing.
 
-### Mobile
+**Mobile.** Android Chromium exempts real-time pages using WebSocket or WebRTC from the budget-based background timer throttle, but the once-per-second background timer alignment still applies.<sup>[3]</sup> A heartbeat written to assume foreground-tab timing is still a bad heartbeat, exemption or not.
 
-- Android Chromium: real-time pages with WebSocket or WebRTC connections are
-  exempt from Chrome's budget-based background timer throttle, but Chrome's
-  once-per-second background timer alignment still applies
-  ([Chrome for Developers](https://developer.chrome.com/blog/background_tabs)).
-  A heartbeat that expects foreground timing is still a bad heartbeat.
-- iOS Safari / WebKit-based browsers: WebKit has explicitly implemented
-  suspension of background, non-visible tabs where possible
-  ([WebKit bug 150515](https://bugs.webkit.org/show_bug.cgi?id=150515)). Treat
-  backgrounding, locking the phone, and app switching as a disconnect horizon:
-  persist before it happens, then reconnect and reconcile on return.
+iOS Safari — and everything on iOS, because it's all WebKit — has explicit, documented suspension behavior for background, non-visible tabs.<sup>[4]</sup> Treat backgrounding, locking the phone, and app-switching as a hard disconnect horizon. Persist state before it happens. Reconnect and reconcile when the tab comes back, because "when" is the operative word — "if" was never on the table.
 
-Short version: WebSocket gives you a pipe.
-A CRDT gives you a story when the pipe disappears.
+WebSocket gives you a pipe. A CRDT gives you a story to tell when the pipe disappears mid-sentence.
 
-## What Usually Breaks First
+## What Breaks First
 
-- Broadcasting raw editor HTML and pretending that is a merge algorithm.
-- Treating cursor position as a character offset after concurrent edits move
-  every character underneath it.
-- Putting presence into durable document history, then wondering why every
-  saved document contains an archaeological record of cursors.
-- Treating a WebSocket `open` event as proof that missed operations were
-  recovered.
-- Sending huge CRDT updates over a data channel and discovering that message
-  limits are an interoperability problem, not a vibes problem
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels)).
-- Letting every tab open its own transport and duplicate every operation.
-- Using a timer-only heartbeat while the browser is allowed to throttle or
-  suspend the page.
+- Broadcasting raw editor HTML and calling that a merge algorithm. It isn't. It's a race condition with a font.
+- Treating cursor position as a character offset — which becomes fiction the instant a concurrent edit shifts every character underneath it.
+- Writing presence into durable document history, then discovering every saved document contains an archaeological record of where everyone's cursor sat in 2024.
+- Treating a WebSocket `open` event as proof that missed operations were recovered. It's proof the pipe exists. Nothing more.
+- Sending large CRDT updates over a data channel and discovering message-size limits are an interoperability problem, not a vibes problem.<sup>[2]</sup>
+- Letting every open tab run its own transport, quietly duplicating every operation the user makes.
+- Running a timer-only heartbeat on a page the browser is fully entitled to throttle or suspend without asking.
 
 ## Minimal Technical Blueprint
 
-1. Choose a document model with stable item identifiers, then use a CRDT or
-   OT implementation that can transform/merge operations against that model.
-2. Keep a local replica in memory and store its checkpoint plus unsent,
-   idempotent operations in IndexedDB.
-3. Send document operations over a server-authoritative WebSocket connection,
-   with operation IDs, document revision/checkpoint IDs, and acknowledgements.
-4. Keep presence in a separate awareness channel: participant ID, display
-   metadata, selection anchors, focus state, and expiry timestamp.
-5. Represent a cursor or selection with CRDT/OT-relative positions, never a
-   naked integer offset that becomes fiction after the next remote insert.
-6. Use `BroadcastChannel` to elect or coordinate a per-browser connection;
-   tabs relay local work and awareness without impersonating separate users.
-7. On `visibilitychange`, snapshot local state and reduce optimistic
-   heartbeat assumptions. On resume or socket close, reconnect with backoff,
-   request the server checkpoint, apply missed operations, then replay only
-   unacknowledged local work.
-8. If using `RTCDataChannel`, reserve it for small, disposable presence
-   messages. Use the WebSocket path as fallback and source of truth, and
-   chunk or reject oversize payloads.
+```javascript
+// Awareness state: ephemeral, never written to document history.
+// Broadcast separately from CRDT operations, expires on its own.
+function broadcastPresence(channel, state) {
+  channel.postMessage({
+    type: 'awareness',
+    userId: state.userId,
+    selection: state.selectionAnchors,   // CRDT-relative, never a raw offset
+    color: state.color,
+    expiresAt: Date.now() + 10_000,
+  });
+}
 
-## Compatibility Strategy (Pragmatic)
+// On resume: never trust local state alone. Ask the server what actually happened.
+async function reconcile(socket, localCheckpoint, pendingOps) {
+  socket.send(JSON.stringify({ type: 'resync', since: localCheckpoint }));
+  const missed = await waitForServerCheckpoint(socket);
+  applyOperations(missed);             // server's version of events, first
+  replayUnacknowledged(pendingOps);    // then only what genuinely never arrived
+}
+```
 
-- Baseline mode (all modern browsers): WebSocket-backed sync, CRDT/OT merge,
-  IndexedDB recovery, explicit reconnection, and remote cursors rendered from
-  server-relayed awareness.
-- Enhanced mode (supporting browsers): `BroadcastChannel` tab coordination
-  and optional `RTCDataChannel` acceleration for ephemeral presence. The core
-  document must remain correct when either enhancement vanishes.
+1. Pick a document model with stable item identifiers, then bring in a CRDT (or OT) implementation that can transform and merge against that model. Don't write your own from scratch for a conference deadline.
+2. Keep an in-memory local replica, and persist its checkpoint plus unsent, idempotent operations to IndexedDB — the queue survives a crashed tab even if nothing else does.
+3. Send operations over a server-authoritative WebSocket with operation IDs, a document revision/checkpoint ID, and explicit acknowledgements. The server is the referee, same as every other use case in this deck where two clients might disagree.
+4. Keep presence in its own awareness channel, entirely separate from document content: participant ID, display metadata, selection anchors, focus state, expiry timestamp.
+5. Represent cursors and selections with CRDT-relative positions. A naked integer offset is a lie the moment someone else's insert lands upstream of it.
+6. Use BroadcastChannel to coordinate a single per-browser connection across tabs. Tabs relay local work and awareness through it — they don't each impersonate a separate collaborator.
+7. On `visibilitychange`, snapshot local state and drop your optimistic heartbeat assumptions. On resume or socket close: reconnect with backoff, request the server checkpoint, apply what was missed, then replay only what genuinely never got acknowledged.
+8. If you use RTCDataChannel at all, reserve it for small, disposable presence pings. WebSocket stays the fallback and the source of truth. Chunk or reject oversize payloads rather than discovering the interop cliff in production.
 
-This is progressive enhancement, not peer-to-peer cosplay.
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** WebSocket-backed sync, CRDT/OT merge, IndexedDB recovery, explicit reconnection, remote cursors rendered from server-relayed awareness. This works everywhere, no asterisks, no browser roulette.
 
-- Presence is personal data. Keep it minimal: display name, avatar reference,
-  selection state, and a short expiry are usually enough.
-- Authorize every document subscription server-side. A room ID is not an
-  access-control system.
-- Treat CRDT updates and awareness payloads as untrusted input; enforce size,
-  schema, rate, and membership limits before fan-out.
-- `RTCDataChannel` traffic is protected with DTLS, but that does not remove
-  the need for product-level authorization or retention rules
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels)).
-- Provide a clear policy for locally stored document replicas on shared
-  devices, including logout cleanup and retention.
+**Enhanced:** BroadcastChannel tab coordination, optional RTCDataChannel acceleration for ephemeral presence only. The document stays correct with zero degradation if either enhancement vanishes — that's the test for whether it's actually an enhancement or a load-bearing dependency wearing a disguise.
 
-Real-time collaboration without authorization is just a very efficient leak.
+This is progressive enhancement. It is not peer-to-peer cosplay.
+
+## Security and Compliance
+
+Presence is personal data, full stop — display name, avatar reference, selection state, a short expiry is usually plenty, and "usually plenty" means resist the urge to add more just because the payload has room.
+
+Authorize every document subscription server-side. A room ID is not an access-control system, it's a string someone can guess or share.
+
+Treat every CRDT update and every awareness payload as untrusted input. Enforce size, schema, rate, and membership limits before fan-out — the fact that it came from an authenticated socket doesn't make the payload trustworthy, it makes the sender identifiable when something goes wrong.
+
+RTCDataChannel traffic is protected by DTLS by default, which is worth knowing and not worth relaxing on.<sup>[2]</sup> Transport encryption is not the same thing as product-level authorization, and nobody's audit checklist accepts the substitution.
+
+Define a clear policy for locally persisted document replicas on shared devices — logout cleanup, retention, the works. Real-time collaboration without authorization isn't a feature. It's a very efficient leak with a nice cursor animation.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge with two users editing the same paragraph at once.
-- Firefox latest paired with Chromium, including deliberately oversize
-  `RTCDataChannel` payloads and fragmented operation batches.
-- Safari macOS latest with WebSocket-only mode and optional data-channel mode.
-- Two tabs in one browser: edit in both, close one, reload one, then verify
-  identity, queue, and presence stay sane.
-- Android Chromium: background the tab long enough to observe timer drift,
-  then return and verify resync rather than blind replay.
-- iOS Safari on a real device: lock the phone, switch apps, return through a
-  poor network, and verify that stale cursors expire and the replica heals.
-- Server restart and network handoff (Wi-Fi to cellular) while two users edit.
+- Desktop Chrome/Edge, two users editing the same paragraph at the same instant, on purpose.
+- Firefox paired against Chromium, including deliberately oversize RTCDataChannel payloads and fragmented operation batches.
+- Safari macOS, WebSocket-only mode and optional data-channel mode, separately.
+- Two tabs, one browser: edit in both, close one, reload the other, confirm identity, queue, and presence all stay sane.
+- Android Chromium: background the tab long enough to see timer drift, return, verify a real resync happens instead of a blind replay of stale operations.
+- iOS Safari on a real device: lock the phone, switch apps, come back through a bad network, confirm stale cursors expire and the replica heals itself without help.
+- Server restart and a network handoff — Wi-Fi to cellular — while two people are mid-edit.
 
-If your test plan never closes a laptop or locks a phone, it is testing a
-chat demo, not collaboration.
+If your test plan never closes a laptop or locks a phone, you tested a chat demo. Not collaboration.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when several people genuinely need to edit the same thing at the same time, losing or silently overwriting work is unacceptable, and visible presence actually reduces confusion instead of adding decoration to the UI.
 
-- several people genuinely need to edit the same thing at the same time,
-- losing or overwriting edits is unacceptable,
-- presence and visible coordination reduce real user confusion.
+Skip it when an occasional comment thread or a plain record lock solves the real problem, or when the budget doesn't cover a genuine merge model, reconnection logic, and cross-device testing. Half of this feature — the cursor without the CRDT underneath it — is worse than none of it, because it looks finished right up until the first concurrent edit corrupts something quietly.
 
-Avoid this pattern when:
+It's "just a cursor." The cursor was never the hard part.
 
-- occasional comments or a record lock would solve the actual problem,
-- the product cannot fund a real merge model, reconnection logic, and
-  cross-device testing.
+---
 
-Because yes, it is "just a cursor." And no, the cursor is not the hard part.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Rich-text editor with reliable undo/redo**
-(selection mapping, `beforeinput`, composition events, and why browser editing
-commands are not a document model).
+[1]: WebSocket and RTCDataChannel support, [MDN – WebSockets API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API), [caniuse – RTCDataChannel](https://caniuse.com/mdn-api_rtcdatachannel).
+[2]: Data channel message-size and encryption behavior, [MDN – Using WebRTC data channels](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Using_data_channels).
+[3]: Background tab timer throttling and WebSocket/WebRTC exemption, [Chrome for Developers – Background Tabs](https://developer.chrome.com/blog/background_tabs).
+[4]: WebKit background tab suspension, [WebKit Bug 150515](https://bugs.webkit.org/show_bug.cgi?id=150515).

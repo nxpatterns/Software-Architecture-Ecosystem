@@ -1,161 +1,116 @@
-# Use Case 08: Cross-Tab and Cross-Window Coordination
+# Use Case 19: Cross-Tab and Cross-Window Coordination
 
-One user.
-Five open tabs.
-Zero coordination.
+One user. Five open tabs. Zero coordination.
 
-That is how perfectly good web apps turn into race-condition factories.
+That's how a perfectly good web app turns into a race-condition factory, and it happens without anyone doing anything unusual — bookmarks, deep links, CRM shortcuts, notification clicks, a panic-refresh under pressure. Now the app has several concurrent actors sharing storage, network tokens, and business workflows. Congratulations, distributed systems, just with more CSS.
 
-This use case covers browser coordination across multiple tabs/windows of the same app:
-state sync, lock ownership, leader election, background task ownership, and conflict containment.
+This is Use Case 15's bigger sibling: 15 stops one specific action from firing twice. This one covers the general problem underneath it — state sync, lock ownership, leader election, and who actually owns a background job when five tabs all think they might.
 
-## Why this is a proper "hard topic"
+## Why "One Tab, One Session" Was Never True
 
-Because frontend teams often design as if one tab equals one user session.
-Reality is messier.
+Frontend teams design as if one tab equals one user session. Reality opens duplicates constantly, and every one of those duplicates is a fully capable actor with its own idea of what's happening.
 
-Users open duplicates from bookmarks, deep links, CRM shortcuts, notification clicks, and panic-refresh behavior.
-Now your app has concurrent actors sharing storage, network tokens, and business workflows.
-Congratulations, you have distributed systems now. Just with more CSS.
+## The User Story, Stripped of Domain
 
-## User Story (Abstracted)
+- open multiple tabs or windows of the same app,
+- see coherent shared state across all of them,
+- avoid duplicate background jobs firing from each one independently,
+- avoid contradictory edits or actions landing from different tabs,
+- recover safely when a tab crashes or simply gets closed.
 
-A user can:
-
-- open multiple tabs/windows of the same app,
-- see coherent shared state,
-- avoid duplicate background jobs,
-- avoid contradictory edits/actions,
-- and recover safely when a tab crashes or is closed.
-
-Could be admin consoles, workflow tools, chat systems, monitoring dashboards, form-heavy business apps.
-Same pattern.
-Different failure signatures.
+Admin consoles, workflow tools, chat systems, monitoring dashboards — same pattern, different failure signature depending on what's actually at stake.
 
 ## Core Browser Technologies
 
-- BroadcastChannel API: low-latency same-origin messaging between tabs.
-- storage events (`localStorage`): broad fallback signaling channel.
-- SharedWorker (where supported): single shared execution context for multiple tabs.
-- Service Worker (coordination support role): central event handling and cache/queue mediation.
-- Web Locks API (where supported): cooperative lock management for critical sections.
-- IndexedDB: durable shared state and lease metadata.
-- Page Visibility API: detect active/inactive tabs for leadership hints.
-- beforeunload/visibilitychange (carefully): graceful lease release attempts.
+| API | Job | Reference |
+|---|---|---|
+| `BroadcastChannel` | Low-latency same-origin messaging between tabs | — |
+| `storage` events (`localStorage`) | The broad, ugly, universally-supported fallback signaling channel | — |
+| `SharedWorker` (where supported) | Single shared execution context across tabs | — |
+| Service Worker (coordination role) | Central event handling, cache/queue mediation | — |
+| `navigator.locks` (Web Locks) | Cooperative lock management for critical sections | — |
+| IndexedDB | Durable shared state and lease metadata | — |
+| Page Visibility API | Active/inactive hints feeding leadership decisions | — |
+| `beforeunload`/`visibilitychange` | Best-effort lease release — never a guarantee | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+On desktop, your leader-election algorithm looks elegant. On mobile, it meets entropy.
 
-- Chromium: strongest support mix for advanced coordination tools.
-- Firefox: generally strong fundamentals; some advanced APIs may differ in support maturity.
-- Safari: core techniques possible, but advanced coordination APIs can be limited; fallback paths matter.
+Web Locks and `BroadcastChannel` are practical baseline primitives across current Chromium and Firefox, with Firefox's Web Locks support starting at version 96 — a real gap for long-lived enterprise installs still running older versions.<sup>[1]</sup> Safari's `SharedWorker` has a genuinely rough history: supported in 5–6.1, dropped entirely from 7 through 15.6, restored in 16.0.<sup>[2]</sup> Treat it as an enhancement, never a load-bearing coordination mechanism — a browser that removed an API for eight major versions once will not earn your architecture's trust back that easily.
 
-### Mobile
+Android Chromium is workable for moderate coordination patterns. iOS Safari changes the assumptions outright: tabs get suspended or killed more eagerly than desktop teams expect, "this tab is alive" can silently become false with no ceremony at all, and timing-sensitive coordination logic becomes meaningfully less predictable the moment a phone user switches apps.
 
-- Android Chromium: workable for moderate patterns.
-- iOS Safari/WebKit: aggressive lifecycle behavior changes assumptions.
-  - Tabs can be suspended or killed more eagerly.
-  - "This tab is alive" can become false without ceremony.
-  - Timing-sensitive coordination logic is less predictable.
+## What Breaks First
 
-Short version:
-On desktop, your algorithm looks elegant.
-On mobile, your algorithm meets entropy.
+- Running the same background sync independently in every open tab, because nobody designated an owner.
+- Concurrent token-refresh calls racing each other from different tabs, occasionally producing two valid tokens and one very confused auth server.
+- Duplicate notification toasts firing from each tab instance for the same underlying event.
+- Naive last-write-wins state replication with zero conflict semantics behind it.
+- Leader election with no heartbeat timeout handling — a leader that silently dies leaves the group leaderless forever, not gracefully.
+- Assuming `beforeunload` always fires cleanly. It doesn't, especially on mobile, and a coordination design that depends on it is a design that fails exactly when a tab closes the fastest.
 
-## What Usually Breaks First
-
-- Running the same background sync in every open tab.
-- Concurrent token refresh calls racing each other.
-- Duplicate notification toasts from each tab instance.
-- Naive last-write-wins state replication without conflict semantics.
-- Leader election without heartbeat timeout handling.
-- Assuming `beforeunload` always fires cleanly.
-
-If five tabs can each "own" the same job, none of them owns it.
+If five tabs can each "own" the same job, none of them actually owns it.
 
 ## Minimal Technical Blueprint
 
-1. Define coordination domains explicitly:
-   - UI state sync,
-   - network job ownership,
-   - critical write sections,
-   - notification ownership.
-2. Implement deterministic tab identity:
-   - random tab id,
-   - startup timestamp,
-   - persisted lease metadata in IndexedDB.
-3. Add leader election with leases:
-   - lease TTL,
-   - periodic heartbeat,
-   - takeover on expiry.
-4. Use messaging channel hierarchy:
-   - BroadcastChannel primary,
-   - storage-event fallback.
-5. Guard critical operations:
-   - Web Locks where available,
-   - optimistic lock + lease fallback where not.
-6. Make all shared jobs idempotent server-side.
-7. Reconcile state on tab resume/focus:
-   - detect missed events,
-   - reload authoritative slices,
-   - resolve divergences.
-8. Emit coordination telemetry:
-   - lock contention,
-   - lease flaps,
-   - duplicate job suppression counts.
+```javascript
+async function tryBecomeLeader(leaseKey, tabId) {
+  return navigator.locks.request(leaseKey, { ifAvailable: true }, async (lock) => {
+    if (!lock) return false;
+    await writeLease(leaseKey, { tabId, expiresAt: Date.now() + 10_000 });
+    setInterval(() => renewLease(leaseKey, tabId), 4_000); // heartbeat, or the lease expires
+    return true;
+  });
+}
 
-## Compatibility Strategy (Pragmatic)
+// Every tab listens regardless of leadership
+broadcastChannel.onmessage = ({ data }) => reconcileSharedState(data);
+```
 
-- Baseline mode (all modern browsers):
-  - storage-event signaling,
-  - lease-based leader election in IndexedDB,
-  - idempotent server operations.
-- Enhanced mode (supporting browsers):
-  - BroadcastChannel for fast sync,
-  - Web Locks for cleaner critical-section semantics,
-  - SharedWorker for centralized coordination logic.
+1. Define coordination domains explicitly and separately: UI state sync, network job ownership, critical write sections, notification ownership. Don't solve all four with one mechanism.
+2. Give every tab a deterministic identity: random tab ID, startup timestamp, lease metadata persisted in IndexedDB.
+3. Build leader election around leases, not permanence: a TTL, a periodic heartbeat, automatic takeover on expiry.
+4. Layer the messaging channel: `BroadcastChannel` as primary, `storage` events as the fallback that reaches everywhere else.
+5. Guard critical operations with Web Locks where available, an optimistic-lock-plus-lease fallback where not.
+6. Make every shared job idempotent server-side — client coordination reduces duplicate attempts, it does not eliminate the need for the server to survive one anyway.
+7. Reconcile state on every tab resume or focus event: detect missed messages, reload authoritative slices, resolve divergence explicitly rather than trusting whichever local copy is loudest.
+8. Emit coordination telemetry — lock contention, lease flaps, duplicate-job suppression counts — so a coordination bug shows up as a graph, not a support ticket three weeks later.
 
-Do not require enhanced mode for correctness.
-Correctness belongs in baseline.
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** `storage`-event signaling, lease-based leader election backed by IndexedDB, idempotent server operations underneath all of it.
 
-- Treat cross-tab messages as internal but still validate payload shape.
-- Never put sensitive plaintext secrets into shared signaling channels.
-- Enforce server-side authorization on every action regardless of local leader state.
-- Protect against stale-tab actions with version checks and token freshness validation.
+**Enhanced:** `BroadcastChannel` for fast sync, Web Locks for cleaner critical-section semantics, `SharedWorker` for centralized coordination logic where it's actually reliable.
 
-A leader tab is not a trust boundary.
-It is just a convenience boundary.
+Never require the enhanced layer for correctness. Correctness lives in baseline — the same rule as every other coordination-shaped use case in this deck, because it's the only rule that survives contact with Safari's `SharedWorker` history.
+
+## Security and Compliance
+
+Treat cross-tab messages as internal, not automatically trustworthy — validate payload shape regardless of the same-origin guarantee. Never put plaintext secrets into a shared signaling channel; `BroadcastChannel` and `localStorage` are convenient, not confidential. Enforce server-side authorization on every action regardless of local leader state — a leader tab is a convenience boundary, never a trust boundary, and treating it as one is exactly the kind of assumption a security review exists to catch. Protect against stale-tab actions with version checks and token freshness validation, since a tab that's been asleep for twenty minutes has no reliable idea what's changed since.
 
 ## Test Matrix You Actually Need
 
-- Multi-tab scenarios (2, 5, 10 tabs) on Chrome, Firefox, Safari.
-- Forced close/crash of leader tab during critical workflow.
-- Sleep/wake cycles and resumed tabs after long inactivity.
-- Token refresh storms with simultaneous API retries.
-- Background/foreground transitions on mobile devices.
-- Offline/online transitions while multiple tabs hold pending queues.
-- Duplicate notification suppression checks.
-- Long-run soak tests for lease stability and memory growth.
+- Multi-tab scenarios — 2, 5, 10 tabs — on Chrome, Firefox, and Safari, not just the number that fit comfortably in a demo.
+- Forced close or crash of the leader tab mid-critical-workflow.
+- Sleep/wake cycles and tabs resumed after long inactivity.
+- Token-refresh storms with simultaneous API retries deliberately triggered.
+- Background/foreground transitions on real mobile devices.
+- Offline/online transitions while multiple tabs are holding pending queues.
+- Duplicate-notification suppression, checked directly, not assumed.
+- A long-run soak test for lease stability and memory growth — coordination bugs love to show up after the hour mark, not the first minute.
 
-If your test case is one tab and one happy click path,
-you tested a postcard version of your app.
+A test case with one tab and one happy-path click tested a postcard version of the app.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when users commonly open multiple tabs, when duplicated work causes real business damage, and when the app's complexity actually justifies explicit coordination design rather than a quick patch.
 
-- users commonly open multiple tabs,
-- duplicated work causes real business damage,
-- app complexity justifies explicit coordination design.
+Don't over-engineer it when workflows are read-mostly and genuinely low-risk, when duplicate actions are harmless, or when the product can't fund proper multi-context QA to back up whatever coordination logic gets built.
 
-Avoid over-engineering when:
+Browser coordination can absolutely be made reliable. Only once the team admits, early, that one user can behave like a small cluster all on their own.
 
-- workflows are read-mostly and low-risk,
-- duplicate actions are harmless,
-- product cannot fund proper multi-context QA.
+---
 
-Because yes, browser coordination can be made reliable.
-But only if you admit early that one user can behave like a small cluster.
+[1]: Web Locks and BroadcastChannel version support, [caniuse – Web Locks](https://caniuse.com/mdn-api_lock), [caniuse – BroadcastChannel](https://caniuse.com/mdn-api_broadcastchannel_broadcastchannel).
+[2]: Safari SharedWorker support history, [caniuse – SharedWorker](https://caniuse.com/mdn-api_sharedworker).

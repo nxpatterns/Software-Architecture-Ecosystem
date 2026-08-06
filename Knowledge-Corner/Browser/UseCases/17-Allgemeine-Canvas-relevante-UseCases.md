@@ -1,147 +1,117 @@
-# WebApp Use-Case-Matrix: Browser-APIs & Cross-Browser-Fallstricke
+# Use Case 17: Canvas-Relevant Use Cases — A Working Matrix
 
-Ein wachsendes Nachschlagewerk. Jeder Abschnitt behandelt ein Themengebiet, gruppiert nach Use-Case,
-mit benötigten Web-APIs/Technologien und bekannten Cross-Browser-Problemen (mit Quellen).
+`<canvas>` looks like one API. It's actually ten different products wearing the same tag, and each one breaks in its own specific, well-documented way the instant it leaves Chrome on your laptop. This is the reference matrix: one row per real use case, the APIs it actually needs, and the cross-browser landmine that will find your team eventually.
 
----
+Not a single deep-dive — a map. Use it to know which of the other use cases in this deck to open next.
 
-## Thema 1: Canvas-relevante Use Cases
+## 1. Image Upload + Analysis (Color Extraction, Pixel Inspection)
 
-### 1. Bild-Upload + Analyse (z. B. Farbextraktion, Pixel-Inspektion)
+**Stack:** File API, `FileReader`/`createImageBitmap()`, Canvas 2D, `ctx.drawImage()`, `ctx.getImageData()` for pixel reads. For on-image markup, either a hand-built brush layer over Pointer Events, or the native `EyeDropper` API.
 
-**APIs/Technologien:** File API (`<input type="file">`), `FileReader` bzw. `createImageBitmap()`,
-`<canvas>` 2D-Context, `ctx.drawImage()`, `ctx.getImageData()` zum Pixel-Auslesen. Für die
-Markierung auf dem Bild: eigener Brush-Layer via Pointer Events oder nativ die `EyeDropper`-API.
+**Where it breaks:**
 
-**Fallstricke:**
+- `EyeDropper` exists only in Chromium (Chrome/Edge/Opera, v95+). Safari and Firefox still don't support it as of 2026 — the fallback everywhere else is a Canvas crosshair cursor you build yourself.<sup>[1]</sup>
+- `getImageData()` throws `SecurityError` — "tainted canvas" — the instant an image loads from a foreign origin without matching CORS headers. Identical across every browser, and the classic "runs locally, breaks in production" bug.<sup>[2]</sup>
+- iOS Safari caps canvas area at roughly 16,777,216 pixels (about 4096×4096). A photo straight off a modern 12+ MP phone camera has to be downscaled *before* drawing, or the canvas fails silently — no error, just nothing.<sup>[3]</sup>
+- Safari Private Mode (WebKit 17+) and browsers like Brave deliberately inject noise into canvas output as anti-fingerprinting. Pixel-accurate color analysis can see slightly different RGB values across identical calls.<sup>[4]</sup>
 
-- Die `EyeDropper`-API existiert nur in Chromium-Browsern (Chrome/Edge/Opera ab v95). Safari und
-  Firefox unterstützen sie bis heute (2026) nicht — hier bleibt nur der Canvas-Fallback mit
-  eigenem Fadenkreuz-Cursor ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/EyeDropper_API), [caniuse](https://caniuse.com/mdn-api_eyedropper)).
-- `getImageData()` wirft einen `SecurityError` ("tainted canvas"), sobald ein Bild von einer
-  fremden Origin ohne passende CORS-Header geladen wurde — betrifft alle Browser gleich, ist aber
-  die klassische Ursache für "läuft lokal, bricht in Produktion" ([MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image), [corsfix](https://corsfix.com/blog/tainted-canvas)).
-- iOS Safari limitiert die Canvas-Fläche auf ca. 16.777.216 Pixel (z. B. 4096×4096). Fotos direkt
-  von modernen Handykameras (12+ MP) müssen vor dem Zeichnen herunterskaliert werden, sonst bricht
-  das Canvas lautlos ab ([lionpuro.com](https://lionpuro.com/posts/canvas-is-finally-usable-on-safari), [pqina.nl](https://pqina.nl/blog/canvas-area-exceeds-the-maximum-limit/)).
-- Safari im privaten Modus (ab WebKit 17) und Browser wie Brave fügen dem Canvas-Output bewusst
-  Rauschen hinzu (Anti-Fingerprinting) — bei pixelgenauer Farbanalyse können RGB-Werte dadurch
-  leicht abweichen ([Brave Community](https://community.brave.app/t/improve-fingerprinting-protections-in-brave-ios-to-better-match-safari/641499)).
+## 2. Freehand Drawing / Signature Pad / Whiteboard
 
-### 2. Freihand-Zeichnen / Signatur-Pad / Whiteboard
+**Stack:** Canvas 2D context, Pointer Events (`pointerdown`/`move`/`up`) instead of separate mouse and touch handlers, CSS `touch-action: none` against scroll conflicts.
 
-**APIs/Technologien:** Canvas 2D Context, Pointer Events (`pointerdown`/`move`/`up`) statt
-getrennter Mouse-/Touch-Events, CSS `touch-action: none` gegen Scroll-Konflikte.
+**Where it breaks:**
 
-**Fallstricke:**
+- `PointerEvent.pressure` returns unreliable or constant values in Safari while Chrome and Firefox pass real pressure data through — pressure-sensitive stroke width is not guaranteed identical across browsers, full stop.<sup>[5]</sup>
+- Without `touch-action: none`, the page scrolls and pinch-zooms right along with the drawing gesture on mobile — and the interaction with pinch-zoom differs noticeably between iOS and Android.
 
-- `PointerEvent.pressure` liefert in Safari teils unzuverlässige oder konstante Werte, während
-  Chrome/Firefox echte Druckwerte durchreichen — druckabhängige Strichstärke ist damit nicht
-  garantiert identisch über Browser hinweg ([Stack Overflow](https://stackoverflow.com/questions/76644456/pointer-pressure-is-0-in-safari-in-pointer-events-despite-button-being-pressed)).
-- Ohne `touch-action: none` scrollt/zoomt die Seite auf Mobile während des Zeichnens mit; das
-  Zusammenspiel mit Pinch-Zoom unterscheidet sich zwischen iOS und Android spürbar.
+## 3. In-Browser Image Editing (Crop, Filter, Compression, Watermark)
 
-### 3. Bildbearbeitung im Browser (Zuschneiden, Filter, Kompression, Wasserzeichen)
+**Stack:** Canvas 2D plus `ctx.filter` (CSS filter syntax — `blur()`, `grayscale()`), `OffscreenCanvas` for Worker-side computation, `canvas.toBlob()`/`toDataURL()` for export.
 
-**APIs/Technologien:** Canvas 2D + `ctx.filter` (CSS-Filter-Syntax wie `blur()`, `grayscale()`),
-`OffscreenCanvas` für Berechnung im Web Worker, `canvas.toBlob()`/`toDataURL()` für den Export.
+```javascript
+ctx.filter = 'blur(4px) grayscale(1)'; // Safari: silently ignored, not an error
+```
 
-**Fallstricke:**
+**Where it breaks:**
 
-- `ctx.filter` wird von Safari (Desktop und iOS) nicht unterstützt — Effekte müssen dort manuell
-  per Pixel-Manipulation oder Polyfill nachgebaut werden ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter), [Stack Overflow](https://stackoverflow.com/questions/74334371/canvasrenderingcontext2d-filter-not-working-on-safari)).
-- `toBlob()`/`toDataURL()` mit `image/webp` liefert auf iOS (alle Browser dort laufen auf WebKit)
-  oft stillschweigend PNG statt WebP zurück, ohne Fehler zu werfen ([Stack Overflow](https://stackoverflow.com/questions/79186306/canvas-todataurl-with-webp-not-working-on-ipad-chrome-and-safari)).
-- `OffscreenCanvas` ist erst seit Safari 16.4 verfügbar; ältere iOS-Geräte im Feld brauchen einen
-  Fallback auf synchrones Canvas im Hauptthread ([caniuse](https://caniuse.com/offscreencanvas), [testmuai.com](https://www.testmuai.com/learning-hub/offscreencanvas-browser-support/)).
+- `ctx.filter` is unsupported in Safari, desktop and iOS both — effects there need manual pixel manipulation or a polyfill, and Safari won't tell you it skipped the filter.<sup>[6]</sup>
+- `toBlob()`/`toDataURL()` with `image/webp` on iOS (every browser there runs WebKit) frequently returns PNG silently instead of WebP, with no error thrown.<sup>[7]</sup>
+- `OffscreenCanvas` only arrived in Safari 16.4 — older iOS devices still in the field need a synchronous main-thread fallback.<sup>[8]</sup>
 
-### 4. Canvas-Export (Speichern, Teilen, in Zwischenablage kopieren)
+## 4. Canvas Export (Save, Share, Copy to Clipboard)
 
-**APIs/Technologien:** `canvas.toBlob()`, `<a download>`, Clipboard API
-(`navigator.clipboard.write()` mit `ClipboardItem`), Web Share API für mobile Share-Sheets.
+**Stack:** `canvas.toBlob()`, `<a download>`, Clipboard API (`navigator.clipboard.write()` with `ClipboardItem`), Web Share API for mobile share sheets.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- Bild-Support in der Clipboard API ist neuer als reiner Text-Support und in älteren
-  Safari-/Firefox-Versionen bei den akzeptierten MIME-Typen eingeschränkt (Detailtiefe gehört zum
-  separaten Zwischenablage-Thema, das wir noch vertiefen).
-- `navigator.share()` mit Dateien ist auf Desktop-Chrome/Firefox nicht oder nur experimentell
-  verfügbar, während mobile Browser es gut unterstützen — hier kehrt sich das sonst übliche Muster
-  um: das Handy kann etwas, das der Desktop nicht kann.
+- Image support in the Clipboard API is newer than plain text support, and accepted MIME types are still restricted on older Safari/Firefox — see Use Case 22 for the full clipboard story.
+- `navigator.share()` with files is unsupported or experimental on desktop Chrome/Firefox while mobile browsers handle it well — one of the rare cases where the phone can do something the desktop can't.
 
-### 5. Standbild aus Video/Webcam erfassen
+## 5. Capturing a Still Frame From Video/Webcam
 
-**APIs/Technologien:** `<video>` + `getUserMedia()` (Live-Kamera) oder normales Video-Element,
-`ctx.drawImage(videoElement, ...)` um einen Frame auf Canvas zu zeichnen.
+**Stack:** `<video>` plus `getUserMedia()` for live camera, or a plain video element; `ctx.drawImage(videoElement, ...)` to paint a frame onto canvas.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- iOS Safari verlangt das `playsinline`-Attribut und eine echte Nutzerinteraktion, bevor
-  Video-/Kamera-Frames zuverlässig gezeichnet werden können.
-- Ohne Prüfung von `video.readyState` liefert `drawImage` auf manchen Browsern verzögerte oder
-  leere Frames, bis das Video tatsächlich abspielbereit ist.
+- iOS Safari requires the `playsinline` attribute and a genuine user interaction before video/camera frames draw reliably.
+- Skipping a `video.readyState` check means `drawImage` returns delayed or empty frames on some browsers until the video is actually ready to play.
 
-### 6. QR-/Barcode-Generierung und -Scanning
+## 6. QR/Barcode Generation and Scanning
 
-**APIs/Technologien:** Canvas-Rendering für die Generierung (meist per Library), native
-`BarcodeDetector`-API fürs Scannen aus Video-/Bildstreams.
+**Stack:** Canvas rendering for generation (usually via a library), the native `BarcodeDetector` API for scanning from video or image streams.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- `BarcodeDetector` ist praktisch nur in Chromium verfügbar; Firefox und Safari unterstützen es
-  nicht, weshalb produktive Apps meist auf eine JS/WASM-Library statt der nativen API ausweichen
-  müssen ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/BarcodeDetector), [caniuse](https://caniuse.com/mdn-api_barcodedetector)).
+- `BarcodeDetector` is practically Chromium-only. Firefox and Safari don't support it, so any production app ends up on a JS/WASM library instead of the native API anyway.<sup>[9]</sup>
 
-### 7. Rechenintensive Canvas-Operationen ohne UI-Blocking
+## 7. Compute-Heavy Canvas Work Without Blocking the UI
 
-**APIs/Technologien:** `OffscreenCanvas`, `canvas.transferControlToOffscreen()`, Web Workers.
+**Stack:** `OffscreenCanvas`, `canvas.transferControlToOffscreen()`, Web Workers.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- Volle plattformübergreifende Unterstützung (inkl. 2D-Context im Worker) existiert erst seit
-  Safari 16.4/17. Auf älteren iOS-Geräten im Feld muss der Code synchron im Hauptthread laufen,
-  was auf Low-End-Geräten zu spürbaren Rucklern führt ([caniuse](https://caniuse.com/offscreencanvas)).
+- Full cross-platform support, including the 2D context inside a Worker, only exists from Safari 16.4/17 onward. Older iOS devices in the field need synchronous main-thread code, which stutters visibly on low-end hardware.<sup>[8]</sup>
 
-### 8. Einfache 2D-Spiele im Canvas (Analog zum Chrome-Dino-Spiel)
+## 8. Simple 2D Games in Canvas (See: the Chrome Dino Pattern)
 
-**APIs/Technologien:** Canvas 2D + `requestAnimationFrame()` für die Spiel-Loop, Keyboard Events
-(`keydown`/`keyup`) für Desktop-Steuerung, Touch/Pointer Events auf Mobile, Web Audio API oder
-`<audio>` für Soundeffekte, optional Gamepad API für Controller.
+**Stack:** Canvas 2D plus `requestAnimationFrame()` for the game loop, keyboard events for desktop, touch/pointer events for mobile, Web Audio or `<audio>` for effects, optionally the Gamepad API for controllers. Full treatment in Use Case 16.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- Die Web Audio API verlangt in praktisch allen Browsern eine vorherige Nutzergeste (Klick/Tap) —
-  reines Autoplay von Sound scheitert besonders konsequent auf iOS Safari.
-- Ein Spiel, das rein auf `keydown` baut, ist auf reinen Touch-Geräten unspielbar, sofern keine
-  Touch-Fallback-Buttons existieren.
-- `requestAnimationFrame` wird gedrosselt/pausiert, sobald der Tab im Hintergrund ist — die
-  genauen Drosselungs-Intervalle unterscheiden sich zwischen Chrome, Firefox und Safari.
+- Web Audio requires a prior user gesture in practically every browser — plain autoplay fails especially consistently on iOS Safari.
+- A game built purely on `keydown` is unplayable on touch-only devices without deliberate fallback buttons.
+- `requestAnimationFrame` throttles or pauses in a backgrounded tab — the exact throttling intervals differ between Chrome, Firefox, and Safari.
 
-### 9. Barrierefreiheit von Canvas-Inhalten
+## 9. Accessibility of Canvas Content
 
-**APIs/Technologien:** ARIA-Fallback-Inhalte innerhalb des `<canvas>`-Tags, `role="img"` +
-`aria-label`, alternativ eine parallele versteckte DOM-Struktur für Screenreader.
+**Stack:** ARIA fallback content nested inside the `<canvas>` tag, `role="img"` plus `aria-label`, or a parallel hidden DOM structure for screen readers.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- Kein Browser liest Canvas-Pixel für Screenreader aus — das ist Architektur, kein Bug.
-  Unterschiede bestehen nur darin, wie zuverlässig VoiceOver (Safari) gegenüber NVDA/JAWS
-  (Chrome/Firefox/Edge) den Fallback-Inhalt respektiert, wenn er nicht exakt spezifikationskonform
-  eingebaut ist.
+- No browser reads canvas pixels to a screen reader — that's architecture, not a bug to file. The variance is only in how reliably VoiceOver (Safari) honors fallback content compared to NVDA/JAWS (Chrome/Firefox/Edge) when it isn't built exactly to spec.
 
-### 10. Canvas-Fingerprinting & Privacy-Rauschen (Querschnittsthema)
+## 10. Canvas Fingerprinting and Privacy Noise (Cross-Cutting)
 
-**APIs/Technologien:** Dieselben Lese-APIs wie oben (`toDataURL`, `getImageData`) werden von
-Trackern zur Geräte-Erkennung genutzt.
+**Stack:** The same read APIs as above (`toDataURL`, `getImageData`) double as the tools trackers use for device fingerprinting.
 
-**Fallstricke:**
+**Where it breaks:**
 
-- Safari (Private Mode, ab WebKit 17) und Brave fügen absichtlich Rauschen in Canvas-, WebGL- und
-  WebAudio-Ausgaben ein, um Fingerprinting zu erschweren — das kann bei jedem der obigen
-  Use Cases (Farbextraktion, Bildvergleich, Export) zu minimal unterschiedlichen Pixelwerten
-  zwischen Aufrufen führen ([Brave Community](https://community.brave.app/t/improve-fingerprinting-protections-in-brave-ios-to-better-match-safari/641499)).
+- Safari Private Mode (WebKit 17+) and Brave deliberately inject noise into canvas, WebGL, and Web Audio output specifically to frustrate fingerprinting — which means every use case above (color extraction, image comparison, export) can return marginally different pixel values between identical calls, on the exact same page.<sup>[4]</sup>
+
+## Decision Summary
+
+This is a routing document, not a build plan. Use it to identify which specific canvas capability your feature actually needs, then open the matching deep-dive use case for the real architecture, test matrix, and security notes — starting with Use Case 16 for games and Use Case 02 for anything file-processing-adjacent.
+
+The pattern repeats across all ten rows: Chromium ships the capability first, Safari ships it eventually and differently, and the fingerprinting-resistant browsers quietly corrupt your pixel-perfect assumptions on purpose. Design for that from row one, not as a patch after the conference demo breaks on someone's iPhone.
 
 ---
 
-*Weitere Themen folgen (z. B. Zwischenablage, Formular-Validierung, File-APIs, Audio/Video,
-Storage, Push/Notifications).*
+[1]: `EyeDropper` API browser support, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/EyeDropper_API), [caniuse](https://caniuse.com/mdn-api_eyedropper).
+[2]: Tainted canvas / CORS requirements, [MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image), [corsfix](https://corsfix.com/blog/tainted-canvas).
+[3]: iOS Safari canvas area limit, [lionpuro.com](https://lionpuro.com/posts/canvas-is-finally-usable-on-safari), [pqina.nl](https://pqina.nl/blog/canvas-area-exceeds-the-maximum-limit/).
+[4]: Anti-fingerprinting canvas noise in Safari Private Mode and Brave, [Brave Community](https://community.brave.app/t/improve-fingerprinting-protections-in-brave-ios-to-better-match-safari/641499).
+[5]: `PointerEvent.pressure` inconsistency in Safari, [Stack Overflow](https://stackoverflow.com/questions/76644456/pointer-pressure-is-0-in-safari-in-pointer-events-despite-button-being-pressed).
+[6]: `ctx.filter` unsupported in Safari, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/filter), [Stack Overflow](https://stackoverflow.com/questions/74334371/canvasrenderingcontext2d-filter-not-working-on-safari).
+[7]: Silent WebP-to-PNG fallback on iOS, [Stack Overflow](https://stackoverflow.com/questions/79186306/canvas-todataurl-with-webp-not-working-on-ipad-chrome-and-safari).
+[8]: `OffscreenCanvas` Safari version support, [caniuse](https://caniuse.com/offscreencanvas), [testmuai.com](https://www.testmuai.com/learning-hub/offscreencanvas-browser-support/).
+[9]: `BarcodeDetector` Chromium-only support, [MDN](https://developer.mozilla.org/en-US/docs/Web/API/BarcodeDetector), [caniuse](https://caniuse.com/mdn-api_barcodedetector).

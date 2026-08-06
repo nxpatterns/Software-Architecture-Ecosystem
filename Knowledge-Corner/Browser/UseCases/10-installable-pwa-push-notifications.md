@@ -1,188 +1,127 @@
 # Use Case 10: Installable PWA With Push Notifications
 
-Most teams assume a PWA can be installed, ask for permission, and then somehow notify people from JavaScript. It can do the first two. The actual push send is the exception: an application server must send to the browser's push service. This is a client-heavy feature, not a client-only feature.
+Most teams assume a PWA can install itself, ask permission, and notify people straight from JavaScript. It can do the first two. The actual send is the exception to the "just client-side" story: an application server has to push to the browser's push service. This is a client-heavy feature. It was never a client-only one.
 
-## Why this is a good next "hard topic"
+## Why the Happy Path Lies
 
-Because the happy path is a manifest, a service worker, and a permission prompt. The real path includes an install journey, an operating-system permission model, subscription churn, a server-side VAPID key, and iOS rules that make a normal Safari tab the wrong product surface.
+The happy path is a manifest, a service worker, a permission prompt. The real path adds an install journey, an OS-level permission model, subscription churn, a server-side VAPID key, and iOS rules that quietly disqualify a normal Safari tab as the product surface entirely.
 
-## User Story (Abstracted)
+## The User Story, Stripped of Domain
 
-A user can:
+- open the web app in a browser,
+- add it to the device or desktop,
+- decide whether to enable notifications after seeing the app's value, not before,
+- receive a notification while the app isn't even open,
+- tap it, land on the relevant screen,
+- turn notifications off without uninstalling anything.
 
-- open a web app in a browser,
-- add it to their device or desktop,
-- choose whether to receive notifications after seeing their value,
-- receive a notification while the app is not open,
-- tap it and arrive at the relevant screen,
-- and turn notifications off without deleting the app.
-
-We do not care which notification.
-Could be a task reminder, a delivery update, a price alert, or a workflow event.
-Same pattern: a web app needs to wake up politely when something changes elsewhere.
+Task reminder, delivery update, price alert — same pattern: a web app needs to wake up politely when something changes somewhere else entirely.
 
 ## Core Browser Technologies
 
-- `Web App Manifest`: declares the app's identity, icons, start URL, and preferred
-  display mode; `standalone` requests an app-like surface ([MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/display)).
-- `Service Worker`: receives push events away from the page and can show a
-  persistent notification; service workers require HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API)).
-- `Push API` / `PushManager`: creates a `PushSubscription` for an active service
-  worker and receives messages sent from a server ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Push_API)).
-- `Notifications API`: requests the user's permission and displays the actual
-  system notification. Permission must be earned, not sprayed at first load
-  ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API/Using_the_Notifications_API)).
-- `VAPID` keys: identify the application server to the push service; VAPID uses
-  signed tokens so the push service can attribute requests ([RFC 8292](https://datatracker.ietf.org/doc/html/rfc8292)).
-- `Application server`: stores subscriptions and sends encrypted Web Push requests
-  to each subscription endpoint. This is the non-browser part people try to omit
-  ([Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers)).
-- `Cache Storage API` (recommended): cache the app shell so a launched installed
-  app has something useful to render while it reconnects.
+| API | Job | Reference |
+|---|---|---|
+| Web App Manifest | Identity, icons, start URL, `display: "standalone"` | [MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/display) |
+| Service Worker | Receives push events away from the page, shows persistent notifications, HTTPS-only | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) |
+| Push API / `PushManager` | Creates a `PushSubscription`, receives server-sent messages | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) |
+| Notifications API | Permission request and the actual system notification — earned, never sprayed on load | MDN |
+| VAPID keys | Identify the app server to the push service via signed tokens | [RFC 8292](https://datatracker.ietf.org/doc/html/rfc8292) |
+| Application server | Stores subscriptions, sends encrypted Web Push — the part people try to skip | [Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers) |
+| Cache Storage API | App shell caching so a launched install has something to render while reconnecting | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+The desktop flow is an API integration. iOS is an onboarding flow with an API integration reluctantly attached.
 
-- Chromium (Chrome, Edge, Arc): this is the least surprising route. Push API is
-  supported in current Chromium lines, and the Web App Manifest is supported in
-  Chrome and Edge ([Push API](https://caniuse.com/push-api), [Manifest](https://caniuse.com/wf-manifest)).
-- Firefox: Push API is supported, but Web App Manifest support is not a reason to
-  promise the same install experience as Chromium; Caniuse lists the manifest as
-  unsupported in Firefox ([Push API](https://caniuse.com/push-api), [Manifest](https://caniuse.com/wf-manifest)).
-  Build the app as a good website first and treat "install" as a browser-specific
-  entry point, not a contract.
-- Safari (macOS): standards-based Web Push arrived in Safari 16.1 on macOS Ventura
-  ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
-  Use the same feature-detected Push API path; do not revive the old proprietary
-  Safari push stack just because old blog posts still exist.
+Chromium has Push API and Web App Manifest support across the board — the least surprising route available.<sup>[1]</sup> Firefox supports the Push API but not the Web App Manifest per caniuse, so don't promise Firefox the same install ceremony Chromium offers.<sup>[1]</sup> Build the app as a genuinely good website first; treat "install" as a browser-specific bonus, never a load-bearing contract.
 
-### Mobile
+Safari got standards-based Web Push in 16.1 on macOS Ventura.<sup>[2]</sup> Use the feature-detected Push API path — don't resurrect the old proprietary Safari push stack because a five-year-old blog post is still indexed somewhere.
 
-- Android Chromium: Push API and Web App Manifest support make the conventional
-  install-plus-push flow viable ([Push API](https://caniuse.com/push-api), [Manifest](https://caniuse.com/wf-manifest)).
-  The work is still permission timing, battery reality, and notification quality.
-- iOS Safari / WebKit-based browsers: this is the constraint that decides the
-  product. **Web Push became available in iOS and iPadOS 16.4, and only for web
-  apps added to the Home Screen** ([WebKit](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/)).
-  A normal browser tab cannot be your iOS push surface. The user must add the app
-  to the Home Screen first, launch that installed web app, and tap an explicit
-  subscribe control; WebKit requires the permission request to follow direct
-  user interaction ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
+**iOS is the constraint that decides the whole product.** Web Push arrived in iOS/iPadOS 16.4, and only for web apps added to the Home Screen.<sup>[3]</sup> A normal browser tab cannot be your iOS push surface, full stop. The user adds the app to the Home Screen, launches that installed instance, taps an explicit subscribe control — and WebKit requires the permission request to follow direct user interaction, no exceptions.<sup>[2]</sup>
 
-Short version: the desktop flow is an API integration.
-iOS is an onboarding flow with an API integration attached.
+## What Breaks First
 
-## What Usually Breaks First
+- Treating browser installation as an automatic prompt instead of the user's decision it actually is.
+- Requesting notification permission on first page view, before the user has any reason to think this app deserves the interruption.
+- Assuming `Notification.permission === 'granted'` means a `PushSubscription` already exists. It doesn't — permission and subscription are two separate steps.
+- Sending a subscription to the server with no link to the right user, device, consent state, and preference set.
+- Treating a push endpoint as permanent. Browsers and users unsubscribe, reinstall, clear data, change their minds — constantly.
+- Building the iOS flow around a Safari tab, when 16.4 flatly requires Home Screen installation first.<sup>[3]</sup>
+- Calling this "client-only" because `subscribe()` ran in the client. The server still has to send the notification — that part never moved.<sup>[4]</sup>
 
-- Treating browser installation as an automatic prompt instead of a user decision.
-- Asking for notification permission on first page view, before the user knows
-  why this app deserves to interrupt them ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API/Using_the_Notifications_API)).
-- Assuming `Notification.permission === 'granted'` means a PushSubscription exists.
-- Sending the subscription to a server without associating it with the right user,
-  device, consent state, and notification preferences.
-- Treating a push endpoint as stable forever. Browsers and users unsubscribe,
-  reinstall, clear data, and change their minds.
-- Building iOS push around a Safari tab. iOS/iPadOS 16.4 requires the app to be
-  added to the Home Screen ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
-- Calling this client-only because `pushManager.subscribe()` ran in the client.
-  The server still sends the notification ([Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers)).
-
-The browser registers interest. Something else still has to have news.
+The browser registers interest. Something else still has to have actual news.
 
 ## Minimal Technical Blueprint
 
-1. Serve the app over HTTPS, publish a manifest with stable `id`, `name`, icons,
-   `start_url`, and `display: "standalone"`, then register a versioned service worker.
-2. Make the ordinary website excellent first; add a contextual install explanation
-   instead of relying on a magical cross-browser install button.
-3. In the service worker, cache the app shell and implement `push` plus
-   `notificationclick` handlers; make click routing idempotent.
-4. After an explicit "Enable alerts" tap, check capability and permission, then
-   call `registration.pushManager.subscribe()` with `userVisibleOnly: true` and
-   the VAPID public `applicationServerKey` ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/PushManager/subscribe)).
-5. POST the full subscription object, the authenticated user/device identifier,
-   consent timestamp, and preference topics to the application server over HTTPS.
-6. Keep the VAPID private key only on that server. When an event occurs, the
-   server sends a standards-based Web Push request to the stored endpoint; this
-   is the required server-side send ([Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers)).
-7. In the `push` handler, validate the payload shape, update local state if needed,
-   and call `showNotification()` with a minimal, non-secret title and body.
-8. In `notificationclick`, focus an existing client or open the in-scope route;
-   clean up failed subscriptions and provide a visible unsubscribe control.
+```javascript
+enableAlertsButton.addEventListener('click', async () => {
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,               // required: every push must show a notification
+    applicationServerKey: VAPID_PUBLIC_KEY,
+  });
+  await fetch('/api/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({ subscription, userId, consentTimestamp: Date.now() }),
+  });
+});
 
-## Compatibility Strategy (Pragmatic)
+// In the service worker:
+self.addEventListener('push', (event) => {
+  const { title, body, url } = event.data.json(); // never secrets, ever
+  event.waitUntil(self.registration.showNotification(title, { body, data: { url } }));
+});
+```
 
-- Baseline mode (all browsers): responsive website, in-app notification center,
-  email/SMS or manual refresh where the user explicitly chooses it. No push
-  permission request merely because the page loaded.
-- Enhanced desktop/Android mode: feature-detect service workers, `PushManager`,
-  and notification permission; then offer install and opt-in push where supported
-  ([MDN: Service Worker](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API), [MDN: Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API)).
-- Enhanced iOS mode: show Home Screen installation guidance first. Only after the
-  installed app is running on iOS/iPadOS 16.4 or later should the app expose the
-  notification opt-in route ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
+1. Serve over HTTPS, publish a manifest with a stable `id`, `name`, icons, `start_url`, `display: "standalone"`, register a versioned service worker.
+2. Make the ordinary website excellent on its own first. Add a contextual install explanation instead of relying on a magic cross-browser install button — because there isn't one.
+3. In the service worker, cache the app shell and implement `push` and `notificationclick` handlers; make click routing idempotent.
+4. After an explicit "Enable alerts" tap, check capability and permission, then call `subscribe()` with `userVisibleOnly: true` and the VAPID public key.
+5. POST the full subscription, authenticated user/device identifier, consent timestamp, and preference topics to the server, over HTTPS.
+6. Keep the VAPID private key server-side, always. On an event, the server sends a standards-based Web Push request to the stored endpoint — this is the send that has to happen, no shortcut around it.<sup>[4]</sup>
+7. In the `push` handler, validate the payload shape, update local state if relevant, call `showNotification()` with a minimal, non-secret title and body.
+8. In `notificationclick`, focus an existing client or open the in-scope route, clean up failed subscriptions, provide a visible unsubscribe control.
 
-This is progressive enhancement, not permission-prompt performance art.
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** responsive website, in-app notification center, email/SMS or manual refresh as an explicit user choice. No push permission request just because the page loaded.
 
-- Treat a PushSubscription endpoint and its encryption keys as personal device
-  identifiers. Store them with the same access controls and retention policy as
-  other contact channels.
-- Keep the VAPID private key on the server, rotate it deliberately, and never
-  ship it in the bundle. The public key is for `subscribe()`; the private key is
-  for the send path.
-- Put no sensitive account data, one-time links, health data, or secrets in a
-  notification title/body. Lock screens have excellent shoulder-surfing support.
-- Authenticate the subscription-registration request and make unsubscribe,
-  account deletion, preference changes, and failed-endpoint cleanup idempotent.
-- Separate "user accepted notifications" from "we are allowed to market to this
-  person." Those are not automatically the same consent.
+**Enhanced desktop/Android:** feature-detect service workers, `PushManager`, notification permission; offer install and opt-in push where supported.
 
-A push service delivers attention. Treat it like a production dependency, not a
-free `alert()` that escaped the tab.
+**Enhanced iOS:** show Home Screen installation guidance first. Only once the installed app is actually running on 16.4+ does the notification opt-in route appear.<sup>[2]</sup>
+
+Progressive enhancement. Not permission-prompt performance art.
+
+## Security and Compliance
+
+Treat a subscription endpoint and its encryption keys as personal device identifiers — same access controls and retention policy as any other contact channel. Keep the VAPID private key server-side, rotate it deliberately, never ship it in the client bundle. The public key is for `subscribe()`. The private key is for sending, and it never crosses that line.
+
+No sensitive account data, one-time links, health information, or secrets in a notification title or body — lock screens have excellent shoulder-surfing support and zero access control. Authenticate the subscription-registration request; make unsubscribe, account deletion, preference changes, and failed-endpoint cleanup idempotent. Separate "user accepted notifications" from "we're allowed to market to this person" — those are not automatically the same consent, and treating them as one is the kind of assumption that ends up in a compliance review.
+
+A push service delivers attention. Treat it like a production dependency, not a free `alert()` that escaped the tab.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge: fresh install, denied permission, granted permission,
-  subscription renewal, notification click, and uninstall/reinstall.
-- Firefox latest: push opt-in and foreground/background click behavior; verify
-  the non-install fallback is still useful.
-- Safari macOS 16.1 or later: subscribe, close the site, send a server push, and
-  test notification click routing ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
-- Android Chrome on a real phone: install, opt in, lock the device, send a push,
-  change network state, and revoke notification permission in system settings.
-- iPhone or iPad on iOS/iPadOS 16.4 or later: first add the web app to the Home
-  Screen, launch it from there, then request permission from a tap and send a
-  real server push ([WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)).
-- Server drill: expire or remove a subscription, simulate an invalid endpoint,
-  and prove the sender deletes or retries records without spamming users.
+- Desktop Chrome/Edge: fresh install, denied permission, granted permission, subscription renewal, notification click, uninstall/reinstall.
+- Firefox: push opt-in and click behavior in foreground and background; confirm the non-install fallback still works on its own.
+- Safari macOS 16.1+: subscribe, close the site, send a real server push, test click routing.
+- Android real device: install, opt in, lock the device, send a push, change network state, revoke permission in system settings.
+- iPhone/iPad on 16.4+: add to Home Screen first, launch from there, request permission from a tap, send a real server push.
+- Server drill: expire or remove a subscription, simulate an invalid endpoint, confirm the sender deletes or retries without spamming anyone.
 
-If your iOS test never involved Home Screen installation, you did not test iOS
-web push. You tested a different product.
+If the iOS test never involved Home Screen installation, that wasn't iOS web push. It was a different product wearing the same name.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when a timely event genuinely benefits from interrupting the user, when the product can explain the benefit before asking permission, and when the team can actually operate the subscription and push-send service on the backend.
 
-- a timely event genuinely benefits from interrupting the user,
-- the product can explain the benefit before asking permission,
-- the team can operate the small but real subscription and push-send service.
+Skip it when a live tab, an inbox, or ordinary polling already covers the need, when alerts would carry sensitive content or create fatigue, or when nobody's signed up to own VAPID keys, endpoint cleanup, and consent records long-term.
 
-Avoid this pattern when:
+It's a web app on the home screen. The push sender still lives on a server, no matter how the pitch deck phrased it.
 
-- a live tab, inbox, or ordinary polling is enough,
-- alerts would carry sensitive content or create alert fatigue,
-- the project cannot own server-side VAPID keys, endpoint cleanup, and consent
-  records.
+---
 
-Because yes, it is a web app on the home screen.
-And yes, the push sender still lives on a server.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Browser credential and passkey flows for local-first apps**
-(WebAuthn ceremony, device-bound credentials, recovery, and why "passwordless"
-does not mean "state-less").
+[1]: Push API and Web App Manifest support, [caniuse – Push API](https://caniuse.com/push-api), [caniuse – Manifest](https://caniuse.com/wf-manifest).
+[2]: Safari 16.1 Web Push and interaction requirement, [WebKit Blog](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
+[3]: iOS/iPadOS 16.4 Home Screen requirement, [WebKit Blog](https://webkit.org/blog/13966/webkit-features-in-safari-16-4/).
+[4]: Server-side Web Push send requirement, [Apple Developer](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers).

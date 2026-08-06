@@ -1,180 +1,126 @@
 # Use Case 13: On-Device AI Inference in the Browser
 
-Most teams hear “AI feature” and immediately add an API endpoint.
-Then the image, text, audio, or document takes a small international trip before
-the user gets a result.
+"AI feature" usually means adding an API endpoint, and then the image, text, or document takes a small international trip before the user gets an answer back.
 
-This use case does the work in the browser instead.
-The model runs on the user's CPU, GPU, or NPU. No inference request. No queue.
-Just a model bundle, local compute, and the usual amount of browser reality.
+This does the work in the browser instead. The model runs on the user's CPU, GPU, or NPU. No inference request, no queue — just a model bundle, local compute, and the usual amount of browser reality waiting underneath.
 
-## Why this is a good next "hard topic"
+## Why the Demo Is Easy and the Product Isn't
 
-Because a local model demo is easy. A local model that loads once, stays
-responsive, works on Safari and Firefox, and does not melt a phone is not.
+A local model demo is trivial. A local model that loads once, stays responsive, works on Safari and Firefox, and doesn't melt a phone in someone's pocket — that's the actual project.
 
-## User Story (Abstracted)
-
-A user can:
+## The User Story, Stripped of Domain
 
 - open a web page,
 - provide an image, text prompt, audio clip, or local document,
 - run classification, extraction, embedding, or small-model generation,
-- receive a result without sending the input to an inference service,
-- keep using the page while inference is running,
-- lose connectivity after the model is available,
-- and run the same task again without another server round-trip.
+- get a result with no input ever sent to an inference service,
+- keep using the page while inference runs,
+- lose connectivity after the model is cached and keep going anyway,
+- run the same task again with zero server round-trip.
 
-We do not care which model task.
-Could be image classification, semantic search, OCR post-processing, moderation,
-or a small language model. Same execution shape.
+Image classification, semantic search, OCR post-processing, a small language model — same execution shape underneath.
 
 ## Core Browser Technologies
 
-- `WebGPU`: GPU compute fast path for suitably supported devices and models.
-- `WebNN` (where available): browser API for hardware-accelerated neural-network graphs, potentially using CPU, GPU, or NPU backends.
-- `WebAssembly` / `WASM SIMD`: portable CPU execution path for the model runtime.
-- `ONNX Runtime Web` or `transformers.js`: model runtime and execution-provider layer instead of hand-writing kernels for a Tuesday afternoon.
-- `Web Workers`: run model initialization, pre-processing, and inference away from the UI thread.
-- `OffscreenCanvas` (optional): resize and normalize image input in a Worker.
-- `Cache Storage` / `IndexedDB`: cache model files, tokenizer assets, and an explicit model-version manifest.
-- `Fetch` / `Streams API`: download model artifacts with progress and integrity checks before first use.
-- `Web Crypto API`: verify a pinned model digest and protect any local metadata you actually need to retain.
-- `Cross-Origin Isolation` (optional): enable the `SharedArrayBuffer` path used by threaded WASM runtimes.
+| API | Job | Reference |
+|---|---|---|
+| WebGPU | GPU compute fast path on supported devices | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) |
+| WebNN (where available) | Hardware-accelerated neural-network graphs across CPU/GPU/NPU | [ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html) |
+| WebAssembly / WASM SIMD | Portable CPU execution path — the one that actually reaches everyone | — |
+| ONNX Runtime Web / transformers.js | Model runtime and execution-provider layer, instead of hand-writing kernels on a Tuesday afternoon | [Transformers.js](https://huggingface.co/docs/transformers.js/en/index) |
+| Web Workers | Model init, preprocessing, inference — off the UI thread, always | — |
+| OffscreenCanvas (optional) | Resize/normalize image input inside a Worker | — |
+| Cache Storage / IndexedDB | Model files, tokenizer assets, an explicit version manifest | — |
+| Web Crypto | Verify a pinned model digest before trusting it | — |
+| Cross-Origin Isolation (optional) | Unlocks `SharedArrayBuffer` for threaded WASM runtimes | — |
 
-## Browser Reality Check
+## The Browser Reality Check
 
-### Desktop
+Chromium gets the GPU demo. WASM gets the actual users.
 
-- Chromium (Chrome, Edge, Arc): the broadest WebGPU path: Windows, macOS, and
-  ChromeOS have support, with Android available on Android 12+ Qualcomm/ARM
-  devices; Linux coverage is still expanding ([web.dev](https://web.dev/blog/webgpu-supported-major-browsers)).
-  WebNN remains Chromium-oriented and requires an enablement flag in ONNX
-  Runtime's documented setup ([ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html)).
-- Firefox: WebGPU is stable on Windows and on Apple-silicon Macs running macOS
-  Tahoe 26, but Linux, Android, and Intel Mac support remain gaps
-  ([web.dev](https://web.dev/blog/webgpu-supported-major-browsers)).
-- Safari (macOS): WebGPU is available only on macOS Tahoe 26; older supported
-  Safari installations still need the CPU path ([web.dev](https://web.dev/blog/webgpu-supported-major-browsers)).
+Chromium has the broadest WebGPU path: Windows, macOS, ChromeOS supported, Android 12+ on Qualcomm/ARM devices, Linux coverage still expanding.<sup>[1]</sup> WebNN stays Chromium-oriented and needs an explicit enablement flag in ONNX Runtime's documented setup — not a default-on assumption.<sup>[2]</sup>
 
-### Mobile
+Firefox has stable WebGPU on Windows and on Apple-silicon Macs, but Linux, Android, and Intel Mac remain real gaps, not edge cases you can round to zero.<sup>[1]</sup> Safari's WebGPU support is tied to a specific recent macOS release — anything older still needs the CPU path, full stop.<sup>[1]</sup>
 
-- Android Chromium: WebGPU can be the enhanced path on Android 12+ hardware
-  with Qualcomm/ARM GPUs; do not confuse “Android” with one performance class
-  ([web.dev](https://web.dev/blog/webgpu-supported-major-browsers)).
-- iOS Safari / WebKit-based browsers: WebGPU needs iOS 26, so WASM remains the
-  product path for the long tail of devices ([web.dev](https://web.dev/blog/webgpu-supported-major-browsers)).
-  - Memory pressure is still yours.
-  - A “small” language model is small only until it lands on a phone.
+**iOS needs the same recent OS version for WebGPU, which means WASM stays the actual product path for the long tail of devices out there.**<sup>[1]</sup> Memory pressure is still entirely yours to manage. A "small" language model is small only until it lands on a phone that disagrees.
 
-Short version: Chromium gets the GPU demo.
-WASM gets the users.
+## What Breaks First
 
-## What Usually Breaks First
+- Assuming `navigator.gpu` existing means the target model and every operator it needs will actually run.
+- Shipping WebGPU-only because the team tested it on one recent Chrome laptop and called that coverage.
+- Doing tokenization, image decode, and inference on the main thread and wondering why the UI stutters.
+- Downloading a 300MB model before showing any useful loading state at all.
+- Using float32 everywhere, then acting surprised by memory pressure that quantization would have avoided.
+- Forgetting non-WASM execution providers support only a subset of ONNX operators — checking that subset is not optional.<sup>[3]</sup>
+- Treating a cached model as immutable when the tokenizer or preprocessing code has quietly changed underneath it.
 
-- Assuming `navigator.gpu` means the target model and every operator will work.
-- Shipping only WebGPU because the team tested one recent Chrome laptop.
-- Doing tokenization, image decode, and inference on the main thread.
-- Downloading a 300 MB model before showing a useful loading state.
-- Using float32 everywhere, then acting surprised by memory pressure.
-- Forgetting that non-WASM execution providers support only a subset of ONNX
-  operators ([ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/)).
-- Treating a cached model as immutable when the tokenizer and preprocessing
-  code have already changed underneath it.
-
-“The demo was fast” is not a performance budget.
+"The demo was fast" is not a performance budget.
 
 ## Minimal Technical Blueprint
 
-1. Pick one bounded task first: a classifier, embedding model, or deliberately
-   small instruction model. State the input and output size limits in code.
-2. Export or choose a browser-ready model; quantize it (`q8` or `q4` where
-   quality permits) and publish model, tokenizer, and manifest as one version.
-3. Serve the artifacts over HTTPS. WebGPU itself is restricted to secure
-   contexts ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)).
-4. At startup, feature-detect `navigator.gpu` and attempt a real adapter and
-   device request. Presence is not a benchmark.
-5. Select an execution provider in order: WebGPU, WebNN if deliberately
-   enabled and tested, then WASM. Keep the same application-level model API.
-6. Create a dedicated Worker; load the runtime and model there, then pass
-   transferable input buffers and structured results across `postMessage`.
-7. Pre-process image/audio/text in the Worker, run inference, and emit progress,
-   cancellation, timing, and a bounded result payload.
-8. Cache verified artifacts with their manifest version. Delete obsolete
-   versions rather than building a private model museum in IndexedDB.
-9. Record local telemetry only after consent: selected backend, cold/warm load,
-   inference duration, errors, and model version. Never log the input by
-   accident.
+```javascript
+// Worker: pick the best available backend, keep one API surface above it
+async function loadRuntime() {
+  if (navigator.gpu && await tryWebGPUAdapter()) return 'webgpu';
+  if (webnnEnabledAndTested()) return 'webnn';
+  return 'wasm'; // the backend that actually reaches everyone
+}
 
-## Compatibility Strategy (Pragmatic)
+self.onmessage = async ({ data }) => {
+  const backend = await loadRuntime();
+  const result = await runInference(backend, data.input); // transferable buffers in, structured result out
+  self.postMessage({ result, backend, durationMs: performance.now() - data.startedAt });
+};
+```
 
-- Baseline mode (all modern browsers):
-  - WASM runtime in a Worker,
-  - quantized small model,
-  - progress UI, cancellation, and an explicit “model unavailable” state,
-  - no dependency on GPU, NPU, or cross-origin isolation.
-- Enhanced mode (supporting browsers):
-  - WebGPU execution provider,
-  - GPU-resident tensors for chained work where the runtime supports it,
-  - threaded WASM only when isolation headers and the device justify it,
-  - WebNN only as a separately tested experiment, not a magic accelerator.
+1. Pick one bounded task first — a classifier, an embedding model, a deliberately small instruction model. State input/output size limits in code, not in a comment.
+2. Export or choose a browser-ready model, quantize it (`q8` or `q4` where quality allows), publish model, tokenizer, and manifest as one atomic version.
+3. Serve everything over HTTPS — WebGPU itself is secure-context-restricted.
+4. At startup, feature-detect `navigator.gpu` and attempt a *real* adapter and device request. Presence of the API is not a benchmark.
+5. Select an execution provider in order: WebGPU, then WebNN if deliberately enabled and tested, then WASM. One application-level API on top, regardless of which backend actually runs.
+6. Load the runtime and model inside a dedicated Worker; pass transferable buffers and structured results across `postMessage` — never raw tensors by copy.
+7. Preprocess in the Worker, run inference, emit progress, cancellation, timing, and a bounded result payload.
+8. Cache verified artifacts against their manifest version. Delete obsolete versions — don't build a private model museum inside IndexedDB nobody remembers to clean.
+9. Log local telemetry only after consent: selected backend, cold/warm load time, duration, errors, model version. Never the input, not even by accident.
 
-Transformers.js follows the same basic split: browser CPU execution uses WASM by
-default, with WebGPU selected explicitly for supported environments
-([Transformers.js](https://huggingface.co/docs/transformers.js/en/index)).
+## Compatibility Strategy
 
-## Security and Compliance Notes
+**Baseline:** WASM runtime in a Worker, a quantized small model, progress UI, cancellation, an honest "model unavailable" state, zero dependency on GPU, NPU, or cross-origin isolation.
 
-- Local inference keeps the raw input out of a remote inference request, which
-  is useful for private images, text, and documents
-  ([W3C WebNN specification](https://www.w3.org/TR/webnn/)).
-- “Local” does not mean “safe by vibes.” Model files are executable-adjacent
-  supply-chain inputs; pin versions, verify hashes, and control their origin.
-- Explain the first-download size before starting it, especially on mobile data.
-- Treat cached inputs, thumbnails, prompts, and embeddings as user data. Retain
-  only what the feature genuinely needs and provide a clear-data control.
-- If result telemetry leaves the device, document it separately from inference.
-  Privacy claims enjoy that distinction.
+**Enhanced:** WebGPU execution provider, GPU-resident tensors for chained work where the runtime supports it, threaded WASM only when isolation headers and the device actually justify it, WebNN as a separately tested experiment — not a magic accelerator you flip on and forget about.
+
+Transformers.js follows the same split by default: WASM on the CPU path, WebGPU only where explicitly selected and supported.<sup>[4]</sup>
+
+## Security and Compliance
+
+Local inference keeps raw input out of a remote request entirely — genuinely useful for private images, text, and documents.<sup>[5]</sup> "Local" does not mean "safe by vibes" — model files are executable-adjacent supply-chain inputs, so pin versions, verify hashes, control their origin like you would any other dependency that runs code.
+
+Explain the first-download size before it starts, especially on mobile data — a silent 300MB download is the fastest way to burn trust before the feature even runs once. Treat cached inputs, thumbnails, prompts, and embeddings as user data: retain only what the feature genuinely needs, provide a real clear-data control. If any result telemetry leaves the device, document that separately from the inference story itself — privacy claims deserve that distinction, and reviewers will ask for it.
 
 ## Test Matrix You Actually Need
 
-- Desktop Chrome/Edge with WebGPU enabled and a GPU driver old enough to be
-  annoying.
-- Firefox latest: verify the complete WASM path, not a flag-enabled developer
-  setup.
-- Safari macOS latest: verify WASM load, Worker messaging, cancellation, and
-  memory recovery after repeated runs.
-- Android Chrome on one capable phone and one mid-range phone.
-- iOS Safari on a real device with cold cache, warm cache, low-power mode, and
-  a background/return cycle.
-- Offline after the model is cached, including a reload.
-- Slow first download, corrupted artifact, unsupported operator, Worker crash,
-  and a user pressing Cancel halfway through.
+- Desktop Chrome/Edge with WebGPU enabled and a GPU driver old enough to be genuinely annoying.
+- Firefox: the complete WASM path, not a flag-enabled developer setup that never ships.
+- Safari macOS: WASM load, Worker messaging, cancellation, memory recovery across repeated runs.
+- Android: one capable phone and one deliberately mid-range one.
+- iOS real device: cold cache, warm cache, low-power mode, a background/return cycle.
+- Fully offline after the model is cached, including a page reload.
+- Slow first download, a corrupted artifact, an unsupported operator, a Worker crash, a user hitting Cancel halfway through.
 
-If the fallback only appears in a test plan, it is not a fallback.
+If the fallback only appears in the test plan and never in the actual product, it isn't a fallback.
 
 ## Decision Summary
 
-Use this pattern when:
+Use this when the task is bounded enough for a browser-sized, browser-speed model, when raw input genuinely should stay on-device, when offline or low-latency interaction matters, and when the product can accept device-dependent performance as a real design constraint rather than a bug to file.
 
-- the task is bounded enough for a browser-sized, browser-speed model,
-- raw input should stay on the device,
-- offline or low-latency interaction matters,
-- the product can accept device-dependent performance.
+Skip it when the model needs server-class memory or long generation windows, when the result must be bit-identical across every device, or when nobody's budgeting for model packaging, fallback testing, and cache lifecycle as ongoing engineering.
 
-Avoid this pattern when:
+The browser can run the model. That doesn't make every laptop in the audience an inference appliance.
 
-- the model requires server-class memory or long generation windows,
-- the result must be identical across every device,
-- you cannot budget for model packaging, fallback testing, and cache lifecycle
-  engineering.
+---
 
-Because yes, the browser can run the model.
-No, that does not make every laptop an inference appliance.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-**Private local semantic search in the browser**
-(embeddings, vector indexes, offline document retrieval, and the moment a
-“small” index becomes another memory budget).
+[1]: WebGPU support across Chromium, Firefox, and Safari, [web.dev](https://web.dev/blog/webgpu-supported-major-browsers).
+[2]: WebNN Chromium-oriented status and setup, [ONNX Runtime Web](https://onnxruntime.ai/docs/get-started/with-javascript/web.html).
+[3]: Execution-provider operator coverage, [ONNX Runtime Web tutorials](https://onnxruntime.ai/docs/tutorials/web/).
+[4]: Transformers.js default WASM/WebGPU split, [Transformers.js docs](https://huggingface.co/docs/transformers.js/en/index).
+[5]: On-device inference privacy rationale, [W3C WebNN specification](https://www.w3.org/TR/webnn/).
