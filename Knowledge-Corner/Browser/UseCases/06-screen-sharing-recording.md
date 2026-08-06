@@ -24,10 +24,10 @@ Support operator, meeting participant, reviewer, trainer, or the same user recor
 | API | Job | Reference |
 |---|---|---|
 | [`getDisplayMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia) | Browser-mediated display-surface selection, returned as `MediaStream` | MDN |
-| Screen Capture API | Defines the selection model, constraints, surface metadata | — |
-| `MediaStream` / `MediaStreamTrack` | Preview, observe `ended`, release deterministically | — |
-| `MediaRecorder` | Records the display stream to a `Blob` | — |
-| WebRTC (optional) | Sends the stream to another participant live | — |
+| Screen Capture API | Defines the selection model, constraints, surface metadata | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Capture_API) |
+| `MediaStream` / `MediaStreamTrack` | Preview, observe `ended`, release deterministically | [MediaStream (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream), [MediaStreamTrack (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) |
+| `MediaRecorder` | Records the display stream to a `Blob` | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder) |
+| WebRTC (optional) | Sends the stream to another participant live | [WebRTC API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API) |
 
 ## The Browser Reality Check
 
