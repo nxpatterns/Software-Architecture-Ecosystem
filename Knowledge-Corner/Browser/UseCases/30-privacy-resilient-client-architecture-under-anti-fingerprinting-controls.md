@@ -141,10 +141,3 @@ Avoid fragile design when:
 
 Because yes, modern browsers can be both privacy-protective and product-capable.
 But only if architecture accepts that privacy is now part of the runtime contract.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-Resilient browser testing strategy beyond happy-path automation
-(real-device matrices, privacy-mode CI slices, lifecycle chaos testing, and release confidence scoring).
-Where test strategy finally matches production reality.

@@ -155,10 +155,3 @@ Avoid self-congratulation when:
 
 Because yes, advanced browser UX can be accessible.
 But only if accessibility is designed into interaction architecture from day one.
-
-## Next Logical Topic
-
-After this, the best follow-up is:
-Privacy-resilient client architecture in anti-fingerprinting environments
-(canvas/audio noise, partitioned storage, evolving tracking protections, and feature reliability under privacy defenses).
-Where browser privacy controls and product assumptions finally collide.
