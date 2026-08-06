@@ -27,11 +27,11 @@ Voice note, video response, evidence clip, training submission — same pipeline
 | [`getUserMedia()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia) | Requests camera/mic as a `MediaStream` | MDN |
 | [`MediaRecorder`](https://caniuse.com/mediarecorder) | Encodes a stream into timed chunks and a final `Blob` | caniuse |
 | [`isTypeSupported()`](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/isTypeSupported_static) | Probes a format before you promise your server can ingest it | MDN |
-| `MediaStream` / `MediaStreamTrack` | Own the live tracks, stop them deliberately | — |
-| Web Audio API | Gain, mute, analysis, filtering before recording | — |
-| `AudioContext` / `OfflineAudioContext` | Local audio processing without a server round-trip | — |
+| `MediaStream` / `MediaStreamTrack` | Own the live tracks, stop them deliberately | [MediaStream (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream), [MediaStreamTrack (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) |
+| Web Audio API | Gain, mute, analysis, filtering before recording | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) |
+| `AudioContext` / `OfflineAudioContext` | Local audio processing without a server round-trip | [AudioContext (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/AudioContext), [OfflineAudioContext (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/OfflineAudioContext) |
 | WebCodecs (optional) | Frame-accurate local video export, capability-gated | MDN |
-| `URL.createObjectURL()` / `Blob` | Preview, retain, upload | — |
+| `URL.createObjectURL()` / `Blob` | Preview, retain, upload | [URL.createObjectURL() (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL_static), [Blob (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Blob) |
 
 ## The Browser Reality Check
 

@@ -27,11 +27,11 @@ Knowledge-base article, proposal, comment, structured note — same editing engi
 | [`contenteditable`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/contenteditable) | The editing surface and input integration — not your document database | MDN |
 | [Selection / Range API](https://developer.mozilla.org/en-US/docs/Web/API/Selection) | Read and restore the caret around controlled mutations | MDN |
 | [`beforeinput`](https://developer.mozilla.org/en-US/docs/Web/API/Element/beforeinput_event) | Catch editing intent before the browser mutates anything | MDN |
-| `compositionstart/update/end` | Keep IME composition out of your committed transaction history | — |
-| `ClipboardEvent` / `DataTransfer` | Read plain text and rich HTML on paste, then sanitize it yourself | — |
-| `MutationObserver` | Last-resort reconciliation for native edits your model didn't see coming | — |
-| Editor-owned history model | Semantic transactions and selection snapshots — never outsourced to browser undo | — |
-| [`InputEvent.getTargetRanges()`](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/getTargetRanges) | Map intent to affected ranges before deciding what to do about it | MDN |
+| `compositionstart/update/end` | Keep IME composition out of your committed transaction history | [compositionstart (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event), [compositionupdate (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event), [compositionend (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event) |
+| `ClipboardEvent` / `DataTransfer` | Read plain text and rich HTML on paste, then sanitize it yourself | [ClipboardEvent (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/ClipboardEvent), [DataTransfer (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer) |
+| `MutationObserver` | Last-resort reconciliation for native edits your model didn't see coming | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) |
+| Editor-owned history model | Semantic transactions and selection snapshots — never outsourced to browser undo | [History API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/History_API) |
+| `InputEvent.getTargetRanges()`| Map intent to affected ranges before deciding what to do about it | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/getTargetRanges)  |
 
 ## The Browser Reality Check
 
