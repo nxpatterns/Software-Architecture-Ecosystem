@@ -21,13 +21,13 @@ Order submission, payment confirmation, approval, "delete everything" — same c
 
 | API | Job | Reference |
 |---|---|---|
-| `BroadcastChannel` | Lightweight status/result messages to same-origin tabs | — |
-| `navigator.locks` (Web Locks API) | Grants one tab exclusive ownership of a named client-side critical section | — |
-| `SharedWorker` (optional) | One same-origin worker as a shared message bus / coordinator | — |
-| IndexedDB | Persists operation state and known results across reload | — |
-| `fetch()` + server idempotency keys | The server, not tab timing, is the real authority on exactly-once effects | — |
-| `AbortController` | Cancel a request before it reaches a meaningful commit point | — |
-| `visibilitychange`/`pagehide` | Record state early — a disappearing tab owes nobody a graceful shutdown | — |
+| `BroadcastChannel` | Lightweight status/result messages to same-origin tabs | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel) |
+| `navigator.locks` (Web Locks API) | Grants one tab exclusive ownership of a named client-side critical section | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API) |
+| `SharedWorker` (optional) | One same-origin worker as a shared message bus / coordinator | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/SharedWorker) |
+| IndexedDB | Persists operation state and known results across reload | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
+| `fetch()` + server idempotency keys | The server, not tab timing, is the real authority on exactly-once effects | [fetch (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch), [HTTP Idempotency-Key (IETF draft)](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) |
+| `AbortController` | Cancel a request before it reaches a meaningful commit point | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/AbortController) |
+| `visibilitychange`/`pagehide` | Record state early — a disappearing tab owes nobody a graceful shutdown | [visibilitychange (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event), [pagehide (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event) |
 
 ## The Browser Reality Check
 

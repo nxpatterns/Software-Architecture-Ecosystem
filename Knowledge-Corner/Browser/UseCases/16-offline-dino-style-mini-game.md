@@ -22,12 +22,12 @@ A runner, a reaction game, a puzzle — same browser loop underneath, however th
 
 | API | Job | Reference |
 |---|---|---|
-| Canvas 2D | Draws player, obstacles, ground, score, game-over — no DOM node per pixel | — |
-| `requestAnimationFrame()` | Drives the render/update loop right before repaint | — |
-| `keydown`/`keyup` | Pressed-state for jump, duck, restart, desktop accessibility | — |
+| Canvas 2D | Draws player, obstacles, ground, score, game-over — no DOM node per pixel | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) |
+| `requestAnimationFrame()` | Drives the render/update loop right before repaint | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame) |
+| `keydown`/`keyup` | Pressed-state for jump, duck, restart, desktop accessibility | [keydown (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event), [keyup (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event) |
 | Pointer Events | One input model covering mouse, pen, and touch | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events) |
 | Web Audio API | Sample-accurate, low-latency effects — the correct tool over `<audio>` for short sounds | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) |
-| `visibilitychange` | Pauses or discards frame timing when hidden | — |
+| `visibilitychange` | Pauses or discards frame timing when hidden | [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event) |
 | Service Worker + Cache Storage (web-app clone only) | Precaches everything so a real website can open offline | [MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation) |
 
 An `<audio>` element is fine for one long music track. For short effects, Web Audio wins on sample-accurate timing and a reusable mixing graph.<sup>[1]</sup> After the first explicit gesture creates or resumes the context, every subsequent effect uses that unlocked graph instead of each one gambling on a fresh autoplay request.<sup>[2]</sup>
