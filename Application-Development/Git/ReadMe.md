@@ -115,6 +115,7 @@ Auto push of new branches
 
 If something cannot be ignored, even it is in the .gitignore file, then it is probably already tracked by Git. In this case you have to remove it from the index:
 
+    git rm --cached .DS_Store
     git rm --cached folder/file.txt
     git rm -r --cached .nx  // remove folder recursively
     # Re-check
@@ -124,7 +125,7 @@ If something cannot be ignored, even it is in the .gitignore file, then it is pr
 
     git rm -r --cached .
     git add .
-    git commit -am "Removed ignored files"
+    git commit -am "Remove ignored files"
     git push
 
 ## Undo add
