@@ -4,6 +4,27 @@
 
 And if you want to add remote files that are not present locally, you just run rsync a second time in the reverse direction.
 
+## Installation
+
+On macOS, you can install `rsync` using Homebrew:
+
+```bash
+brew install rsync
+```
+
+On Ubuntu or Debian-based systems, you can install `rsync` using apt:
+
+```bash
+sudo apt update
+sudo apt install rsync
+```
+
+On Fedora, you can install `rsync` using dnf:
+
+```bash
+sudo dnf install rsync
+```
+
 ## Examples
 
 ### Dry Run
