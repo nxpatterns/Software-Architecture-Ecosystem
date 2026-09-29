@@ -8,7 +8,7 @@
 | **Scanly JPEG Structure** | [scanly.co/jpeg-structure](https://scanly.co/jpeg-structure) | Marker-Tabelle, DQT, Encoder-Fingerprint | Läuft **im Browser** (kein Upload). |
 | **Aback File Chunk Analyzer** | [abacktools.com/…/file-chunk-analyzer](https://abacktools.com/tools/file/forensics/file-chunk-analyzer) | JPEG-Marker segmentweise, Offsets/Größen | Browser-lokal. |
 | **Aback File Structure Validator** | [abacktools.com/…/file-structure-validator](https://abacktools.com/tools/file/forensics/file-structure-validator) | Pass/Fail, Integritäts-Score, Marker-Checks | Gut für „ist die Datei kaputt?“ |
-| **Aback File Trailer Analyzer** | [abacktools.com/…/file-trailer-analyzer](https://abacktools.com/tools/file/forensics/file-trailer-analyzer) | Footer / **EOI `FF D9`**, Truncation | Alleine reicht das **nicht** für euren Fall: EOI kann **mitten** in der Datei sitzen, Trailer nur die letzten 64 Bytes prüft. |
+| **Aback File Trailer Analyzer** | [abacktools.com/…/file-trailer-analyzer](https://abacktools.com/tools/file/forensics/file-trailer-analyzer) | Footer / **EOI `FF D9`**, Truncation | Alleine reicht das **nicht** für unseren Fall: EOI kann **mitten** in der Datei sitzen, Trailer nur die letzten 64 Bytes prüft. |
 | **ICE Forensic** | [ice-forensic.com/en](https://www.ice-forensic.com/en) | Hex + EXIF, große Dateien | Allgemeiner Hex-Viewer, weniger „JPEG-Map“. |
 | **Toolbox365 Hex Viewer** | [toolbox365.net/tools/hex-viewer](https://www.toolbox365.net/tools/hex-viewer/) | Hex + Strukturbaum | Browser-lokal. |
 
