@@ -5,7 +5,7 @@ Context: Looking for mature alternatives to Angular Material (which feels visual
 
 > **Revision 2 (30 Sep 2026):** enriched with findings from a Claude evaluation session. Additions marked **[web]** come from web search or fetched pages in that session, NOT from the npm registry check above. **[training]** = model knowledge, not verified today. Project constraints stated in that session: no Tailwind, no PrimeNG. Details in section 8.
 >
-> **Revision 3 (30 Sep 2026):** section 9 adds the Clarity deep dive (full `@clr/angular`, `@clr/ui` CSS only, and the combination with Angular Aria + CDK). Items marked **[tested]** were built or run in a sandbox (Node 24.21, Angular CLI 22.2.0, TypeScript 6.0.2, npm registry), not just read.
+> **Revision 3 (30 Sep 2026):** section 9 adds the Clarity deep dive (full `@clr/angular`, `@clr/ui` CSS only, the combination with Angular Aria + CDK, and zoneless bugs in 9.8). Items marked **[tested]** were built or run in a sandbox (Node 24.21, Angular CLI 22.2.0, TypeScript 6.0.2, npm registry), not just read.
 
 > Versions and Angular peer dependencies were checked against the npm registry on 30 Sep 2026. "Angular" = `peerDependencies['@angular/core']` of the package. Density assessments are qualitative.
 
@@ -173,7 +173,7 @@ Source key: [tested] = built, run or read from the installed npm package in a sa
 
 | Way to use Clarity | Angular 22.2 result |
 |---|---|
-| Full `@clr/angular` 18.3.0 | Installs. Builds only with the deprecated `@angular/animations` installed and `provideAnimations()` added. Two known Angular 22 problems and one unexplained forms result (9.3). |
+| Full `@clr/angular` 18.3.0 | Installs. Builds only with the deprecated `@angular/animations` installed and `provideAnimations()` added. Two known Angular 22 problems, one unexplained forms result (9.3), and open zoneless bugs (9.8). |
 | `@clr/ui` only (CSS) | Builds and runs without `@clr/angular` and without `@angular/animations`. You own all behaviour (9.4). |
 | `@clr/ui` CSS + Angular Aria + CDK | Aria tabs and accordion carried Clarity classes with ARIA state intact (9.5). Gaps: datepicker, tooltip, toast, datagrid. |
 
@@ -189,7 +189,7 @@ Source key: [tested] = built, run or read from the installed npm package in a sa
 
 1. **`@angular/animations` [tested].** Without it: `Could not resolve "@angular/animations"` (modal, vertical-nav, tree-view, utils). With the package installed and `provideAnimations()` in `app.config.ts`: build passes. Angular marks `provideAnimations` "Intent to remove in v23" (June 2027) [web]. Clarity PR #2693 replaces it with CSS animations, keeps the public API and declares no breaking change, but I could not determine whether it is merged, and it is not in the 18.3.0 notes I could read [web]. The PR text says it reads Angular's private `ɵANIMATIONS_DISABLED` token.
 2. **`ComponentFactoryResolver` [tested].** Angular 22.2 core no longer exports it. `@clr/addons/property-view` still imports it in its `.d.ts` and JS. With `skipLibCheck: false`: `TS2305 ... has no exported member 'ComponentFactoryResolver'`. Angular's default `skipLibCheck: true` hides it, so the build passed. Runtime behaviour untested. `@clr/addons/wizard` imports property-view. Core `@clr/angular` has no such reference. Fix PRs #2702 and #2703 (tested by their authors on Angular 22.1 + TS 6.0.2) have unknown status [web].
-3. **Forms error display (unexplained) [tested].** Setup: `clr-input-container` + `clrInput` + `clr-control-error`, required field, blur. Angular 22.2.0 + Clarity 18.3.0: the control was touched and invalid, but no error text and no `.clr-error` class appeared, for `ngModel` and reactive `FormControl`, with OnPush and Default. Byte-identical spec on Angular 21.2.24 + Clarity 18.3.0: error shown in all cases. Signal Forms `[formField]` on `clrInput` showed the error on 22.2 (separate spec). Cause unknown. jsdom, one component only. Needs a real-browser repro and probably an upstream issue.
+3. **Forms error display (unexplained) [tested].** Setup: `clr-input-container` + `clrInput` + `clr-control-error`, required field, blur. Angular 22.2.0 + Clarity 18.3.0: the control was touched and invalid, but no error text and no `.clr-error` class appeared, for `ngModel` and reactive `FormControl`, with OnPush and Default. Byte-identical spec on Angular 21.2.24 + Clarity 18.3.0: error shown in all cases. Signal Forms `[formField]` on `clrInput` showed the error on 22.2 (separate spec). Cause unknown. jsdom, one component only. Needs a real-browser repro and probably an upstream issue. Not a zone.js effect: the result was identical with zone.js loaded and zone-based change detection (9.8).
 4. **Bundle [tested, production build].**
 
 | Build | JS main raw / transfer | Global CSS raw / transfer |
@@ -266,7 +266,7 @@ The full build additionally needs `@angular/cdk/overlay-prebuilt.css` on the loa
 
 | Option | Benefit | Cost |
 |---|---|---|
-| A. Full `@clr/angular` on Angular 22 | Complete component set incl. datagrid | Animations workaround, addons `ComponentFactoryResolver` issue, forms error result unexplained, slow Angular support, Broadcom/VCF-tied roadmap |
+| A. Full `@clr/angular` on Angular 22 | Complete component set incl. datagrid | Animations workaround, addons `ComponentFactoryResolver` issue, forms error result unexplained, not zoneless-ready (9.8), slow Angular support, Broadcom/VCF-tied roadmap |
 | B. Stay on Angular 21.2 with cdk pinned to 21 until Clarity supports 22 | Supported combination | Defers Angular 22 features (Signal Forms stable, Aria stable) |
 | C. `@clr/ui` full CSS, own behaviour | Simple, no Angular coupling | 180 kB gzip CSS (98 kB without font), all behaviour yours |
 | D. `@clr/ui` slim + Aria + CDK | About 39 kB gzip CSS for forms/buttons, official behaviour layer | Sass build to maintain, template work per widget, gaps in datepicker/tooltip/toast/datagrid |
@@ -274,4 +274,24 @@ The full build additionally needs `@angular/cdk/overlay-prebuilt.css` on the loa
 
 ### 9.7 Not verified
 
-Real-browser rendering (layout, heights, dark theme, Aria widgets with Clarity CSS), cause of the forms error result, merge/release status of Clarity PRs #2693, #2702, #2703, whether `@clr/angular` components are standalone, zoneless and SSR behaviour, font reserved-name terms, and everything published after 2026-08-28 (the release page I fetched may have been cached).
+Real-browser rendering (layout, heights, dark theme, Aria widgets with Clarity CSS), cause of the forms error result, merge/release status of Clarity PRs #2693, #2702, #2703, whether `@clr/angular` components are standalone, SSR behaviour, font reserved-name terms, whether the datepicker focus difference below reproduces for me (see 9.8), zoneless behaviour of Aria/CDK, and everything published after 2026-08-28 (the release page I fetched may have been cached).
+
+### 9.8 Zoneless (added after user findings)
+
+Angular 21 made zoneless change detection the default for new apps [web: Angular 21 release coverage]; the user states the same holds for Angular 22. Clarity still assumes zone.js in several places.
+
+| Finding | Source | Status |
+|---|---|---|
+| Datepicker focus behaves differently with and without zone.js | User, direct side-by-side comparison | Reported by user, **not reproduced by me** |
+| Tooltip: hover show/hide triggers `NG0103: Infinite change detection while refreshing application views` in zoneless mode. Clarity 18.x, Angular 21.2, Windows, Edge/Chrome/Firefox. Stack: `TooltipMouseService.hideIfMouseOut` (setTimeout) sets `ClrPopoverService.open`, `ClrPopoverContent.closePopover` calls `removeOverlay`, CDK `OverlayRef.detach` registers `afterNextRender` | Issue #2634, fetched and read | Open bug report; debug-mode error, impact in production unknown |
+| "Zoneless Clarity Design": Clarity 18.x on Angular 22 "still requires zone.js". Broken in preliminary testing: async data loading in tree views (loading spinner stays until something else triggers change detection) and closing a modal with Esc. Reporter says other things seem to work | Issue #2686, fetched and read | Open bug report |
+
+**Forms error result and zone.js [tested].** Hypothesis: my unexplained result in 9.3 item 3 (no error display on Angular 22.2, error shown on 21.2.24) was a zoneless effect. Checks: (1) both sandbox projects had no zone.js, so both ran zoneless, and 21.2.24 still showed the error, so zoneless alone does not explain the difference. (2) On 22.2 with `zone.js` as build polyfill and `provideZoneChangeDetection()` in TestBed (confirmed `typeof Zone === 'function'`, injected `NgZone` is the real `NgZone`), the error was still missing for `ngModel`, reactive `FormControl`, OnPush and Default. Conclusion: the forms result is a difference between Angular 22.2 and 21.2 with Clarity 18.3.0, not a zone.js effect. Cause still unknown. jsdom only.
+
+**Implications.**
+- Full `@clr/angular` on Angular 22: the documented workaround is to load zone.js and use zone-based change detection, which goes against the Angular default and keeps the dependency Angular is moving away from. I did not test the workaround beyond the forms spec.
+- Clarity's fix status for #2634 and #2686 is unknown to me.
+- `@clr/ui` CSS carries no change-detection code, so options C and D in 9.6 are not affected by these issues.
+- Aria and CDK under zoneless: not tested by me. Observation only: the Aria directives expose signal-based inputs and state (`InputSignal`, `Signal` in the type declarations).
+
+**Still open for everyone.** How Aria Combobox and Aria Menu look in a real browser with Clarity CSS. My proof of concept (9.5) covered tabs and accordion in jsdom only.
