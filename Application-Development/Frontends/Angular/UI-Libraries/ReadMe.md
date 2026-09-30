@@ -7,6 +7,8 @@ Context: Looking for mature alternatives to Angular Material (which feels visual
 >
 > **Revision 3 (30 Sep 2026):** section 9 adds the Clarity deep dive (full `@clr/angular`, `@clr/ui` CSS only, the combination with Angular Aria + CDK, and zoneless bugs in 9.8). Items marked **[tested]** were built or run in a sandbox (Node 24.21, Angular CLI 22.2.0, TypeScript 6.0.2, npm registry), not just read.
 
+> **Revision 4 (30 Sep 2026):** real-browser verification of the Clarity findings from a second session (Perplexity Computer). Items marked **[browser]** were run in headless Chromium via Playwright against production builds (Node 24.15.0, Angular CLI 22, `@angular/core` 22.2.0, `@angular/cdk` 22.2.1, `@clr/angular`/`@clr/ui` 18.3.0, zoneless unless stated). GitHub status was read via the GitHub API on 30 Sep 2026. New section 9.9; corrections inline, marked **(rev. 4)**.
+
 > Versions and Angular peer dependencies were checked against the npm registry on 30 Sep 2026. "Angular" = `peerDependencies['@angular/core']` of the package. Density assessments are qualitative.
 
 ---
@@ -19,6 +21,7 @@ Context: Looking for mature alternatives to Angular Material (which feels visual
 - **Oblique, ng-aquila & corporate systems:** use them **as role models** for completeness (layouts, navigation, form patterns), not as a dependency.
 - **Best role models for compact forms:** SAP Fiori (Compact), Elastic EUI ("compressed"), Siemens Element, GitHub Primer, IBM Carbon (sm).
 - **Principles of calm, dense forms:** labels above the field (no floating labels), 28–32 px field height, few borders, almost no shadows.
+- **Clarity (rev. 4):** preferred look. Recommended route: `@clr/ui` CSS (slim Sass build) + Angular Aria + CDK, wrapped in own components (section 9.6 option D). Full `@clr/angular` only with zone.js and not before a release without `@angular/animations`.
 
 ---
 
@@ -52,7 +55,7 @@ Rows/cells marked [web] were added in revision 2. Licence, Tailwind and icon det
 | [DB UX Design System](https://www.npmjs.com/package/@db-ux/ngx-core-components) | Deutsche Bahn | `@db-ux/ngx-core-components` | 5.6.1 | actively maintained | Apache-2.0 | Framework-agnostic with ngx package |
 | [ODX](https://www.npmjs.com/package/@odx/angular) | Dräger | `@odx/angular` | 14.2.0 | `>=21.2.17` | See LICENSE | Medical technology, sober |
 | [Carbon for Angular](https://github.com/carbon-design-system/carbon-components-angular) | IBM | `carbon-components-angular` | 5.72.2 | community-maintained | Apache-2.0 | Carbon itself is one of the most complete systems; form field sizes sm/md/lg |
-| [Clarity](https://clarity.design) | VMware / Broadcom | `@clr/angular` | 18.3.0 | `>= 21.1.0` | MIT | Compact enterprise style. **Correction [web]:** actively maintained, 18.3.0 released 2026-08-28 (fetched release page) with new addons (dialog, menu, stepper, tabs, wizard). `@clr/ui` version is coupled to `@clr/angular`, breaking changes may land in minors: pin exactly. Explicit Angular 22 support not verified beyond the peer range |
+| [Clarity](https://clarity.design) | VMware / Broadcom | `@clr/angular` | 18.3.0 | `>= 21.1.0` | MIT | Compact enterprise style. **Correction [web]:** actively maintained, 18.3.0 released 2026-08-28 (fetched release page) with new addons (dialog, menu, stepper, tabs, wizard). `@clr/ui` version is coupled to `@clr/angular`, breaking changes may land in minors: pin exactly. Explicit Angular 22 support not verified beyond the peer range. **(rev. 4)** Support-policy page lists v18 = Angular 21 only; runs on 22.2 with caveats (section 9.9) |
 | [Kirby](https://cookbook.kirby.design) | Kirby Design (Danish) | `@kirbydesign/designsystem` | 11.11.3 | up to `^21.0.0` only | MIT | Mobile / Ionic-oriented; not yet on Angular 22 |
 | [ng-aquila](https://github.com/allianz/ng-aquila) | Allianz | `@aposin/ng-aquila` | 20.0.0 (npm) | `^20.0.0` (GitHub already at 22.3) | MIT | Almost complete and offers a lot extra, but not space-saving; strongly tied to Allianz branding. **Role model only** |
 
@@ -173,7 +176,7 @@ Source key: [tested] = built, run or read from the installed npm package in a sa
 
 | Way to use Clarity | Angular 22.2 result |
 |---|---|
-| Full `@clr/angular` 18.3.0 | Installs. Builds only with the deprecated `@angular/animations` installed and `provideAnimations()` added. Two known Angular 22 problems, one unexplained forms result (9.3), and open zoneless bugs (9.8). |
+| Full `@clr/angular` 18.3.0 | Installs. Builds only with the deprecated `@angular/animations` installed and `provideAnimations()` / `provideAnimationsAsync()` added. Two known Angular 22 problems and open zoneless bugs (9.8, datepicker reproduced in 9.9). **(rev. 4)** The forms error result (9.3 item 3) did not reproduce in a real browser. |
 | `@clr/ui` only (CSS) | Builds and runs without `@clr/angular` and without `@angular/animations`. You own all behaviour (9.4). |
 | `@clr/ui` CSS + Angular Aria + CDK | Aria tabs and accordion carried Clarity classes with ARIA state intact (9.5). Gaps: datepicker, tooltip, toast, datagrid. |
 
@@ -181,15 +184,15 @@ Source key: [tested] = built, run or read from the installed npm package in a sa
 
 - `@clr/angular` latest = 18.3.0, registry last modified 2026-08-28. Dist-tags: `latest` 18.3.0, `beta` 18.0.0-beta.12, `release-18.2.x` 18.2.2.
 - Peers of 18.3.0: `@angular/core >= 21.1.0`, `@angular/common >= 21.1.0`, `@angular/cdk >= 21.1.0`, `@clr/ui` exactly 18.3.0. Only dependency: `tslib`. The open-ended `>=` means npm will not warn at Angular 23.
-- `@clr/addons` 18.3.0 peers: rxjs, pkijs, asn1js, cdk, `@clr/angular >= 18`, forms, router (list truncated in my output).
+- `@clr/addons` 18.3.0 peers: rxjs, pkijs, asn1js, cdk, `@clr/angular >= 18`, forms, router (list truncated in my output). **(rev. 4) Full list:** `rxjs ^7.8.0`, `pkijs ^3.2.5`, `asn1js ^3.0.6`, `@angular/cdk`, `core`, `forms`, `common`, `router`, `animations`, `platform-browser` (all `>= 21.1.0`), `@clr/angular >= 18`. Note: `@clr/addons` declares `@angular/animations`, `@clr/angular` does not, although it imports it.
 - On an Angular 21.2 project, `npm i @clr/angular` pulled `@angular/cdk` 22.2.1 and failed with ERESOLVE until cdk was pinned to 21.
 - Angular CLI 22.2.0 refused to run on Node 22.22.2. It requires `^22.22.3 || ^24.15.0 || >=26`.
 
 ### 9.3 Full `@clr/angular` on Angular 22.2
 
-1. **`@angular/animations` [tested].** Without it: `Could not resolve "@angular/animations"` (modal, vertical-nav, tree-view, utils). With the package installed and `provideAnimations()` in `app.config.ts`: build passes. Angular marks `provideAnimations` "Intent to remove in v23" (June 2027) [web]. Clarity PR #2693 replaces it with CSS animations, keeps the public API and declares no breaking change, but I could not determine whether it is merged, and it is not in the 18.3.0 notes I could read [web]. The PR text says it reads Angular's private `ɵANIMATIONS_DISABLED` token.
-2. **`ComponentFactoryResolver` [tested].** Angular 22.2 core no longer exports it. `@clr/addons/property-view` still imports it in its `.d.ts` and JS. With `skipLibCheck: false`: `TS2305 ... has no exported member 'ComponentFactoryResolver'`. Angular's default `skipLibCheck: true` hides it, so the build passed. Runtime behaviour untested. `@clr/addons/wizard` imports property-view. Core `@clr/angular` has no such reference. Fix PRs #2702 and #2703 (tested by their authors on Angular 22.1 + TS 6.0.2) have unknown status [web].
-3. **Forms error display (unexplained) [tested].** Setup: `clr-input-container` + `clrInput` + `clr-control-error`, required field, blur. Angular 22.2.0 + Clarity 18.3.0: the control was touched and invalid, but no error text and no `.clr-error` class appeared, for `ngModel` and reactive `FormControl`, with OnPush and Default. Byte-identical spec on Angular 21.2.24 + Clarity 18.3.0: error shown in all cases. Signal Forms `[formField]` on `clrInput` showed the error on 22.2 (separate spec). Cause unknown. jsdom, one component only. Needs a real-browser repro and probably an upstream issue. Not a zone.js effect: the result was identical with zone.js loaded and zone-based change detection (9.8).
+1. **`@angular/animations` [tested].** Without it: `Could not resolve "@angular/animations"` (modal, vertical-nav, tree-view, utils). With the package installed and `provideAnimations()` in `app.config.ts`: build passes. Angular marks `provideAnimations` "Intent to remove in v23" (June 2027) [web]. Clarity PR #2693 replaces it with CSS animations, keeps the public API and declares no breaking change, but I could not determine whether it is merged, and it is not in the 18.3.0 notes I could read [web]. The PR text says it reads Angular's private `ɵANIMATIONS_DISABLED` token. **(rev. 4) [browser]** With the package installed but no animations provider, the build passes, but the datagrid does not render at runtime (`NG03600`, then `Cannot read properties of null (reading 'tView')`). `provideAnimationsAsync()` fixes it and lazy-loads the animation code (main 1.77 MB / 399 kB → 1.59 MB / 350 kB). GitHub API: **#2693 is still open**, not merged.
+2. **`ComponentFactoryResolver` [tested].** Angular 22.2 core no longer exports it. `@clr/addons/property-view` still imports it in its `.d.ts` and JS. With `skipLibCheck: false`: `TS2305 ... has no exported member 'ComponentFactoryResolver'`. Angular's default `skipLibCheck: true` hides it, so the build passed. Runtime behaviour untested. `@clr/addons/wizard` imports property-view. Core `@clr/angular` has no such reference. Fix PRs #2702 and #2703 (tested by their authors on Angular 22.1 + TS 6.0.2) have unknown status [web]. **(rev. 4)** GitHub API: **#2703 merged 2026-09-28 into branch `next`**, #2702 closed without merge. Not in any npm release yet (latest 18.3.0 = 2026-08-28).
+3. **Forms error display (unexplained) [tested].** Setup: `clr-input-container` + `clrInput` + `clr-control-error`, required field, blur. Angular 22.2.0 + Clarity 18.3.0: the control was touched and invalid, but no error text and no `.clr-error` class appeared, for `ngModel` and reactive `FormControl`, with OnPush and Default. Byte-identical spec on Angular 21.2.24 + Clarity 18.3.0: error shown in all cases. Signal Forms `[formField]` on `clrInput` showed the error on 22.2 (separate spec). Cause unknown. jsdom, one component only. Needs a real-browser repro and probably an upstream issue. Not a zone.js effect: the result was identical with zone.js loaded and zone-based change detection (9.8). **(rev. 4) [browser] Not reproduced in Chromium:** Angular 22.2.0 zoneless + Clarity 18.3.0, reactive `FormControl` with `Validators.required` in `clr-input-container` (horizontal layout): type, clear, blur → `clr-control-error` visible and `.clr-error` present; `markAllAsTouched()` on submit → error visible. Most likely a jsdom artifact. `ngModel` not tested in the browser.
 4. **Bundle [tested, production build].**
 
 | Build | JS main raw / transfer | Global CSS raw / transfer |
@@ -198,11 +201,11 @@ Source key: [tested] = built, run or read from the installed npm package in a sa
 | One Clarity input container | 1.39 MB / 330 kB | 1.07 MB / 148 kB |
 | Forms, modal, accordion, datagrid, vertical nav | 1.73 MB / 398 kB | same |
 
-   Importing single modules instead of `ClarityModule` barely changed the size.
-5. **Support lag [web].** Angular 18 (May 2024) arrived in Clarity 17.3.0 (Sept 2024). Angular 19 (Nov 2024) arrived in 17.5.0 (Jan 2025). Clarity 18.0.0 (11 May 2026) requires `>= 21.1.0`, and I found no GA release targeting Angular 20. No official Angular 22 statement yet. A maintainer wrote that the release cycle is tied to the VMware Cloud Foundation (VCF) cycle. Support-policy page still lists Angular only up to 19.
-6. **Governance [web].** Broadcom employees author the PRs (internal Jira ids appear), about 430 stars, 73 open issues and 39 open PRs at the time of the fetch. `@clr/ui` is versioned with `@clr/angular` and may break in minors: pin exactly.
+   Importing single modules instead of `ClarityModule` barely changed the size. **(rev. 4) Cause [browser, esbuild stats]:** the `@clr/angular/icon` entry contributes about **988 kB** to `main` even when `ClrIconModule` is not imported, because almost every component entry imports it and the icon collections are not tree-shaken (`sideEffects: false` notwithstanding). Next biggest Clarity parts in a forms + datagrid + modal app: datagrid 118 kB, datepicker 53 kB, combobox 33 kB (raw).
+5. **Support lag [web].** Angular 18 (May 2024) arrived in Clarity 17.3.0 (Sept 2024). Angular 19 (Nov 2024) arrived in 17.5.0 (Jan 2025). Clarity 18.0.0 (11 May 2026) requires `>= 21.1.0`, and I found no GA release targeting Angular 20. No official Angular 22 statement yet. A maintainer wrote that the release cycle is tied to the VMware Cloud Foundation (VCF) cycle. Support-policy page still lists Angular only up to 19. **(rev. 4) Correction:** the [support-policy page](https://clarity.design/pages/support-policies) fetched today lists **v18 = Angular v21, actively supported**, previous major supported 6 months after a new major. It gives v18's release date as 14 Apr 2026, while npm shows 18.0.0 on 11 May 2026 (17.13.0 was published on 14 Apr).
+6. **Governance [web].** Broadcom employees author the PRs (internal Jira ids appear), about 430 stars, 73 open issues and 39 open PRs at the time of the fetch. **(rev. 4)** GitHub API today: 430 stars, 62 open issues, 38 open PRs, last push 30 Sep 2026 (datagrid column actions, tree-view expand/collapse all). Very active. `@clr/ui` is versioned with `@clr/angular` and may break in minors: pin exactly.
 7. **Density [web].** Clarity 18 has two density themes, regular and compact. Regular reduced row height from 36 to 32 px (issue #2701, which quotes the docs). Naming in the docs is still inconsistent.
-8. **API style.** The install docs still show `ClarityModule` in an `AppModule`. Clarity 18 added secondary entry points. Whether the components are standalone: not verified.
+8. **API style.** The install docs still show `ClarityModule` in an `AppModule`. Clarity 18 added secondary entry points. Whether the components are standalone: not verified. **(rev. 4) [tested, from fesm2022]:** 54 NgModules, 204 declarations with `standalone: false`, 294 decorator `@Input()`s, **0 signal inputs / `signal()` calls**. The `Clr*Module`s import fine into standalone components (tested). Compiled with Angular 21.1.3.
 
 ### 9.4 `@clr/ui` only (CSS)
 
@@ -240,11 +243,13 @@ The full build additionally needs `@angular/cdk/overlay-prebuilt.css` on the loa
 
 **Font [tested].** Four `@font-face` blocks for Metropolis, weights 200, 400, 500, 600, about 21 kB WOFF each (85.4 kB binary, about 114 kB as base64 in the CSS). Font licence per Clarity README: SIL OFL. Whether a reserved font name applies: not checked.
 
-**Density tokens [tested, read from CSS].** `.clr-input` height = `--clr-forms-input-wrapper-height` = `--clr-base-row-height-s` = `--cds-global-space-9`, with a second definition `calc(20 * 1rem / var(--cds-global-base))` and `--cds-global-base` defined as 20 and 16 (two themes). Default body font token: 14 px. Pixel heights were NOT measured in a browser.
+**Measured heights and dark theme (rev. 4) [browser].** Slim build (forms, buttons, tables, layout, header, embedded font): `.clr-input`, `.clr-select` **24 px**; with `clr-density="compact"` on `body` **20 px**. Full `@clr/angular` app: input, select, date input also 24 px. Dark theme works in the slim build: `cds-theme="dark"` switches body background to `rgb(27, 43, 50)` and input text to `rgb(227, 234, 237)` (light: `rgb(252, 253, 253)` / `rgb(33, 51, 59)`). Slim build sizes with embedded font: styles 566 kB raw / 108 kB transfer, main 285 kB / 76 kB. Signal Forms `[formField]` on `clr-input`, `clr-select`, `clr-checkbox` updated the model correctly. Markup must match Clarity's structure exactly: with my first attempt the red border appeared but the error subtext stayed grey.
+
+**Density tokens [tested, read from CSS].** `.clr-input` height = `--clr-forms-input-wrapper-height` = `--clr-base-row-height-s` = `--cds-global-space-9`, with a second definition `calc(20 * 1rem / var(--cds-global-base))` and `--cds-global-base` defined as 20 and 16 (two themes). Default body font token: 14 px. Pixel heights were NOT measured in a browser. **(rev. 4):** measured, see above.
 
 **What you lose.** All JavaScript behaviour (modal, dropdown, accordion, datagrid, datepicker, combobox, tooltips, tabs). Clarity classes only give look, not focus, keyboard or ARIA. `cds-icon` is an Angular component inside `@clr/angular` since 18, so icons need their own system (for example `@ng-icons`, section 8.6). Version coupling to `@clr/angular`: pin exactly.
 
-**Correction to an earlier chat answer.** The 14 `cds-theme` matches I quoted came from the forms-only build. My grep for the literal `cds-theme=dark` returned 0 in both slim builds, which is inconclusive because attribute selectors may be quoted. Dark theme in the slim builds is therefore unverified.
+**Correction to an earlier chat answer.** The 14 `cds-theme` matches I quoted came from the forms-only build. My grep for the literal `cds-theme=dark` returned 0 in both slim builds, which is inconclusive because attribute selectors may be quoted. Dark theme in the slim builds is therefore unverified. **(rev. 4):** verified in the browser, see above.
 
 ### 9.5 `@clr/ui` CSS + Angular Aria + CDK
 
@@ -266,15 +271,20 @@ The full build additionally needs `@angular/cdk/overlay-prebuilt.css` on the loa
 
 | Option | Benefit | Cost |
 |---|---|---|
-| A. Full `@clr/angular` on Angular 22 | Complete component set incl. datagrid | Animations workaround, addons `ComponentFactoryResolver` issue, forms error result unexplained, not zoneless-ready (9.8), slow Angular support, Broadcom/VCF-tied roadmap |
+| A. Full `@clr/angular` on Angular 22 | Complete component set incl. datagrid; 24 px fields | Animations workaround (removal in v23), addons `ComponentFactoryResolver` issue (fix merged in `next`, unreleased), not zoneless-ready (9.8, datepicker reproduced 9.9), ~1 MB icon code in `main`, slow Angular support, Broadcom/VCF-tied roadmap |
 | B. Stay on Angular 21.2 with cdk pinned to 21 until Clarity supports 22 | Supported combination | Defers Angular 22 features (Signal Forms stable, Aria stable) |
 | C. `@clr/ui` full CSS, own behaviour | Simple, no Angular coupling | 180 kB gzip CSS (98 kB without font), all behaviour yours |
-| D. `@clr/ui` slim + Aria + CDK | About 39 kB gzip CSS for forms/buttons, official behaviour layer | Sass build to maintain, template work per widget, gaps in datepicker/tooltip/toast/datagrid |
+| D. `@clr/ui` slim + Aria + CDK | About 39 kB gzip CSS for forms/buttons, official behaviour layer, zoneless-safe, 20 px fields with `clr-density="compact"`, dark theme works | Sass build to maintain, template work per widget, gaps in datepicker/tooltip/toast/datagrid |
 | E. Own design layer | No third-party CSS | Most design work |
+
+**(rev. 4) Recommendation:** D, with thin wrapper components (`app-input`, `app-select`, `app-dialog`, `app-table`) so Clarity markup lives in one place. Pin `@clr/ui` exactly, and pin `@angular/aria` + `@angular/cdk` together. Start tables with plain `.table`/`.table-compact`; the datagrid CSS is tightly bound to its DOM. Datepicker: start with `<input type="date">` in Clarity styling. Re-evaluate A after a Clarity release that contains #2693 and #2703.
 
 ### 9.7 Not verified
 
-Real-browser rendering (layout, heights, dark theme, Aria widgets with Clarity CSS), cause of the forms error result, merge/release status of Clarity PRs #2693, #2702, #2703, whether `@clr/angular` components are standalone, SSR behaviour, font reserved-name terms, whether the datepicker focus difference below reproduces for me (see 9.8), zoneless behaviour of Aria/CDK, and everything published after 2026-08-28 (the release page I fetched may have been cached).
+Real-browser rendering (layout, heights, dark theme, Aria widgets with Clarity CSS), cause of the forms error result, merge/release status of Clarity PRs #2693, #2702, #2703, whether `@clr/angular` components are standalone, SSR behaviour, font reserved-name terms (**(rev. 4)** still unverified, Metropolis source repo not reachable), whether the datepicker focus difference below reproduces for me (see 9.8; **(rev. 4)** reproduced, 9.9), zoneless behaviour of Aria/CDK, and everything published after 2026-08-28 (the release page I fetched may have been cached).
+
+**(rev. 4) Resolved:** real-browser heights, dark theme (slim build), forms error display (not reproduced in browser), PR status (#2693 open, #2703 merged into `next`, #2702 closed), standalone question (NgModule-based, usable in standalone components), datepicker zoneless defect (reproduced).
+**(rev. 4) Still open:** Aria Combobox / Menu / CDK Dialog with Clarity CSS in a real browser, Aria/CDK under zoneless, modal Esc and tree-view async loading (#2686) in my own test, datagrid selection checkboxes not rendering in my test, `ngModel` error display in the browser, SSR, Metropolis reserved font name, Angular cadence claim in 8.0.
 
 ### 9.8 Zoneless (added after user findings)
 
@@ -282,7 +292,7 @@ Angular 21 made zoneless change detection the default for new apps [web: Angular
 
 | Finding | Source | Status |
 |---|---|---|
-| Datepicker focus behaves differently with and without zone.js | User, direct side-by-side comparison | Reported by user, **not reproduced by me** |
+| Datepicker focus behaves differently with and without zone.js | User, direct side-by-side comparison | Reported by user, **not reproduced by me**. **(rev. 4) Reproduced [browser], see 9.9** |
 | Tooltip: hover show/hide triggers `NG0103: Infinite change detection while refreshing application views` in zoneless mode. Clarity 18.x, Angular 21.2, Windows, Edge/Chrome/Firefox. Stack: `TooltipMouseService.hideIfMouseOut` (setTimeout) sets `ClrPopoverService.open`, `ClrPopoverContent.closePopover` calls `removeOverlay`, CDK `OverlayRef.detach` registers `afterNextRender` | Issue #2634, fetched and read | Open bug report; debug-mode error, impact in production unknown |
 | "Zoneless Clarity Design": Clarity 18.x on Angular 22 "still requires zone.js". Broken in preliminary testing: async data loading in tree views (loading spinner stays until something else triggers change detection) and closing a modal with Esc. Reporter says other things seem to work | Issue #2686, fetched and read | Open bug report |
 
@@ -295,3 +305,27 @@ Angular 21 made zoneless change detection the default for new apps [web: Angular
 - Aria and CDK under zoneless: not tested by me. Observation only: the Aria directives expose signal-based inputs and state (`InputSignal`, `Signal` in the type declarations).
 
 **Still open for everyone.** How Aria Combobox and Aria Menu look in a real browser with Clarity CSS. My proof of concept (9.5) covered tabs and accordion in jsdom only.
+
+### 9.9 Real-browser verification (revision 4) [browser]
+
+Setup: fresh `ng new` on Angular CLI 22 (`@angular/core` 22.2.0, zoneless by default, no zone.js), `@clr/angular` + `@clr/ui` 18.3.0, `@angular/cdk` 22.2.1, `@angular/animations` 22 + `provideAnimationsAsync()`. Production build served statically, driven by Playwright in headless Chromium. Second build of the identical app with `zone.js` + `provideZoneChangeDetection()` for comparison.
+
+| Check | Zoneless | With zone.js |
+|---|---|---|
+| Install without peer conflicts | yes | yes |
+| Reactive form: typing updates value, required error on blur and on submit | works | works |
+| Signal Forms `[formField]` on `clrInput`: error after blur / `markAsTouched()` | works | not tested |
+| Signal counter in template | works | works |
+| Dropdown open + item click | works | works |
+| Modal open / close via button | works (Esc not tested) | works |
+| Combobox multi-select (typing + option click) | works | works |
+| Datagrid render, sort, pagination (12 rows, page size 5) | works | works |
+| Datagrid selection checkboxes with `[(clrDgSelected)]` | not rendered | not rendered (same in both, probably my test setup, unresolved) |
+| **Datepicker: focus after opening** | stays on the toggle button | moves to today's day button |
+| **Datepicker: select date with arrow key + Enter** | nothing selected | date selected |
+| Datepicker: select date by mouse click | works | works |
+| Console errors | none | none |
+
+**Datepicker cause [tested, source read].** `DatepickerFocusService` waits for `NgZone.onStable` (`ngZoneIsStableInBrowser()` in `clr-angular-forms-datepicker.mjs`) before moving focus. In zoneless apps `NgZone` is a no-op zone whose `onStable` never emits, so focus is never moved. This is an accessibility defect (keyboard-only users cannot pick a date). Clarity code also contains 38 `runOutsideAngular` calls and one more `onStable` use.
+
+**What this means.** The zoneless defects of full `@clr/angular` are real (datepicker reproduced; tooltip #2634 and modal Esc / tree-view #2686 reported upstream). The only workaround today is zone.js. Options C/D (`@clr/ui` CSS only) have no change-detection code and passed all browser checks for forms, table, layout and dark theme.
