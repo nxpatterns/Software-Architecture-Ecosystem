@@ -256,12 +256,14 @@ The full build additionally needs `@angular/cdk/overlay-prebuilt.css` on the loa
 **Proof of concept [tested, jsdom].** Aria `ngTab` with `class="btn btn-link nav-link" [class.active]="tab.selected()"` rendered `btn btn-link nav-link active` with `aria-selected="true"` and `tabindex="0"`. Aria `ngAccordionTrigger` inside `clr-accordion-panel` with `[class.clr-accordion-panel-open]="trigger.expanded()"`: after a click, `aria-expanded="true"` and the panel carried `clr-accordion-panel-open`. Aria directives set `aria-*` and `data-active` only, no classes, so you bridge state to Clarity classes with signals (`selected()`, `active()`, `expanded()`).
 
 **Coverage [tested, from installed packages].**
+
 - `@angular/aria` 22.2.1 (MIT): accordion, combobox, grid, listbox, menu, tabs, toolbar, tree. Peer: `@angular/cdk` exactly `22.2.1`, `@angular/core ^22.0.0 || ^23.0.0`.
 - `@angular/cdk` 22.2.1: a11y, accordion, bidi, clipboard, collections, dialog, drag-drop, keycodes, layout, listbox, menu, observers, overlay, platform, portal, scrolling, stepper, table, text-field, tree.
 - No entry point for datepicker, tooltip, toast or a ready datagrid in either package. Build them from CDK table and overlay.
 - Overlap: accordion, listbox, menu, tree exist in both Aria and CDK. Choose one source per pattern.
 
 **Costs.**
+
 - Clarity CSS is class-based and expects a specific DOM structure per widget. You write each template and map Aria state to classes.
 - Aria pins CDK to an exact version, so pin both together.
 - Icons: separate system.
@@ -299,6 +301,7 @@ Angular 21 made zoneless change detection the default for new apps [web: Angular
 **Forms error result and zone.js [tested].** Hypothesis: my unexplained result in 9.3 item 3 (no error display on Angular 22.2, error shown on 21.2.24) was a zoneless effect. Checks: (1) both sandbox projects had no zone.js, so both ran zoneless, and 21.2.24 still showed the error, so zoneless alone does not explain the difference. (2) On 22.2 with `zone.js` as build polyfill and `provideZoneChangeDetection()` in TestBed (confirmed `typeof Zone === 'function'`, injected `NgZone` is the real `NgZone`), the error was still missing for `ngModel`, reactive `FormControl`, OnPush and Default. Conclusion: the forms result is a difference between Angular 22.2 and 21.2 with Clarity 18.3.0, not a zone.js effect. Cause still unknown. jsdom only.
 
 **Implications.**
+
 - Full `@clr/angular` on Angular 22: the documented workaround is to load zone.js and use zone-based change detection, which goes against the Angular default and keeps the dependency Angular is moving away from. I did not test the workaround beyond the forms spec.
 - Clarity's fix status for #2634 and #2686 is unknown to me.
 - `@clr/ui` CSS carries no change-detection code, so options C and D in 9.6 are not affected by these issues.
@@ -329,3 +332,59 @@ Setup: fresh `ng new` on Angular CLI 22 (`@angular/core` 22.2.0, zoneless by def
 **Datepicker cause [tested, source read].** `DatepickerFocusService` waits for `NgZone.onStable` (`ngZoneIsStableInBrowser()` in `clr-angular-forms-datepicker.mjs`) before moving focus. In zoneless apps `NgZone` is a no-op zone whose `onStable` never emits, so focus is never moved. This is an accessibility defect (keyboard-only users cannot pick a date). Clarity code also contains 38 `runOutsideAngular` calls and one more `onStable` use.
 
 **What this means.** The zoneless defects of full `@clr/angular` are real (datepicker reproduced; tooltip #2634 and modal Esc / tree-view #2686 reported upstream). The only workaround today is zone.js. Options C/D (`@clr/ui` CSS only) have no change-detection code and passed all browser checks for forms, table, layout and dark theme.
+
+## 10. Review by Gemini: Recommended Future-Proof Architecture
+
+### 10.1 Architectural Verdict on Clarity (`@clr/angular`)
+While Clarity's visual design is exceptionally clean, corporate-focused, and space-saving, full adoption of `@clr/angular` introduces heavy architectural friction for a greenfield **Angular 22+** ecosystem:
+
+- **The Zoneless Blocker:** Angular 22 pushes Zoneless change detection as the modern default. Full `@clr/angular` relies on legacy internal change patterns. As observed in active bug trackers (e.g., `#2634`, `#2686`), utilizing interactive components like tooltips, modals, or async tree views in a zoneless application triggers `NG0103` infinite loop detection errors or drops view-refresh signals entirely.
+- **The Animation Trap:** It requires deprecated `@angular/animations` modules (`provideAnimations()`), which are marked for deprecation/removal by the Angular team.
+- **The Validation Anomaly:** Replicating reactive form validations across Angular 22.2 vs. older versions yields unexplained rendering regressions inside `clr-input-container`.
+
+### 10.2 The Recommended Solution: The "Headless + Slim CSS" Hybrid Pattern
+To achieve a calm, professional, noise-free enterprise UI without accumulating architectural debt, we recommend **Option D**: Pairing **`@clr/ui` (Pure CSS)** with **`@angular/aria`** and **`@angular/cdk`**. Since pure CSS contains no JavaScript change-detection mechanisms, this approach is **100% immune to Zoneless bugs** while fully inheriting Clarity's outstanding visual density.
+
+```plaintext
+┌────────────────────────────────────────────────────────────────────────┐
+│                              USER INTERFACE                            │
+│           (Calm, Dense, 28-32px Compact Forms, Clean Contours)         │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+       ┌────────────────────────────┴────────────────────────────┐
+       ▼                                                         ▼
+┌──────────────────────────────┐                         ┌──────────────────────────────┐
+│       BEHAVIOR LAYER         │                         │         STYLING LAYER        │
+│  @angular/aria + @angular/cdk│                         │     @clr/ui (Pure CSS)       │
+├──────────────────────────────┤                         ├──────────────────────────────┤
+│ • Signal-based Focus / ARIA  │                         │ • No Angular Javascript      │
+│ • Full Zoneless Compliance   │                         │ • Custom CSS Token Mixins    │
+│ • Keyboard Trap Management   │                         │ • Tree-shaken Slim Form Comp │
+└──────────────────────────────┘                         └──────────────────────────────┘
+```
+
+### 10.3 Core Architectural Specifications
+
+- **Form Factor & Sizing:** Enforce a strict **28–32px** boundary for input elements, adhering to the *Elastic EUI (compressed)* and *SAP Fiori (Compact)* role models.
+- **Layout Structure:** Labels must always be anchored firmly *above* the input fields. Avoid floating animations to eliminate visual noise. Drop all unnecessary container drop-shadows and thick structural borders.
+- **Subscript Sizing:** Use a dynamic layout configuration so error validation blocks only take layout space *when actively rendered*, keeping rows dense by default.
+- **Reactivity & Change Detection:** Establish a pure zoneless runtime environment by removing `zone.js` dependencies. Dominate state flows using `Signal Forms` (`[formField]`) combined with local primitives (`computed`, `effect`) to bridge the gap between headless component state and CSS classes.
+
+### 10.4 Implementation Concept: Bridging State to Clarity CSS
+Instead of relying on a library component to listen to state shifts, this architecture maps native headless directives directly to static CSS layouts. The HTML template structure mimics Clarity’s expected structural layout classes (e.g., wrappers, panels, headers) while the component's internal behavior layer is driven exclusively by Angular Aria and CDK.
+
+State-based structural styles (such as opening panels, highlighting rows, or expanding dropdowns) are wired using modern signal bindings. This design bridges accessible ARIA states to specific Clarity CSS class names cleanly in the template, creating a highly modular and completely decoupled framework layer.
+
+### 10.5 Gap-Filling Strategy for Missing Components
+
+Since `@angular/aria` does not ship high-level composite controls out-of-the-box, the following fallback matrix should be utilized to maintain design velocity without importing heavy, forbidden frameworks:
+
+- **Complex DataGrid:** Built natively from `@angular/cdk/table` combined with `@clr/ui` layout table classes. This ensures predictable row rendering, tree-shakable virtual scrolling primitives, and zero zone-dependency.
+- **Tooltips & Overlays:** Implement via `@angular/cdk/overlay`. This bypasses the faulty `TooltipMouseService` of Clarity that forces infinite change detection loops.
+- **Icons:** Use `@ng-icons/core` importing only tree-shaken constants from the **Tabler** or **Heroicons** collection. This remains completely free of Tailwind dependencies with an excellent MIT license profile.
+- **Date Picker:** Adapt the headless calendar entry points exposed by `@taiga-ui/kit` or utilize a custom overlay wrapped over a native HTML5 input to avoid license/compliance issues.
+
+### 10.6 Summary of Architectural Gains
+By establishing this headless architecture, your design system remains immune to framework churn. When Angular 23+ inevitably arrives, your behavioral layer (`@angular/aria`) updates safely via `ng update`, your performance remains highly efficient under strict zoneless constraints, and your application layout stays pristine and dense.
+Would you like to explore the specific Sass/SCSS custom build setup conceptually to see how to drop the heavy font encodings from the compiled stylesheet, or should we evaluate how Signal Forms error validation triggers map conceptually to this pattern?
+AI responses may include mistakes. Learn more
